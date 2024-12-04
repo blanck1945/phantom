@@ -1,0 +1,54 @@
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: rgb(255, 255, 255);
+  min-height: 100vh;
+  padding-top: 1rem;
+}
+
+table {
+  width: 80%;
+  margin: auto;
+  border-collapse: collapse;
+  border: 1px solid;
+  margin-bottom: 1rem;
+}
+
+table, th, td {
+  padding: 15px;
+  text-align: left;
+  border: 1px solid #109947;
+}
+
+th {
+  background-color: #04AA6D;
+  color: white;
+}
+
+table > tbody:nth-child(even) {background-color: #f2f2f2;}
+
+table > tbody:hover {
+  background-color: rgb(57, 58, 57);
+  color: rgb(255, 255, 255) ;
+  cursor: pointer;
+}
+
+th {
+  height: 70px;
+}
+
+td {
+}
+
+.positive {
+  color:#109947 !important
+}
+
+.negative {
+  color:#ff0000 !important
+}

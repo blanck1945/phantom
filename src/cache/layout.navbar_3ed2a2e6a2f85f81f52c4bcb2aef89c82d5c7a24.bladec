@@ -1,0 +1,35 @@
+<?php $_shouldextend[1]=1; ?>
+
+<head>
+ <meta charset="UTF-8">
+ <meta http-equiv="X-UA-Compatible" content="IE=edge">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+ <?php $__currentLoopData = $page_data['metadata']['css']; $this->addLoop($__currentLoopData);$this->getFirstLoop();
+ foreach($__currentLoopData as $css_file): $loop = $this->incrementLoopIndices();  ?>
+ <link rel="stylesheet" href="/css/styles.css">
+ <?php endforeach; $this->popLoop(); $loop = $this->getFirstLoop(); ?>
+
+ <meta property="og:title" content="Phantom App" />
+ <meta property="og:description" content="Light PHP framework for productivity" />
+ <meta property="og:image" content="https://omniglot.com/images/langsamples/udhr_japanese-vert.gif" />
+
+ <script src="https://cdn.tailwindcss.com"></script>
+ <title>
+ Phantom App
+ </title>
+</head>
+
+<?php $this->startSection('navbar'); ?>
+ <nav>
+ <a href="/">Home</a>
+ <a href="/read/ref.csv">Tabla</a>
+ <a href="/login">Ingresa</a>
+ </nav>
+
+ <main>
+ <?php echo $this->yieldContent('content'); ?>
+ </main>
+<?php $this->stopSection(); ?>
+
+<?php if (isset($_shouldextend[1])) { echo $this->runChild('template.metada'); } ?>

@@ -1,0 +1,6 @@
+Total a pagar;$ 60.000,00;;;;;;;;;
+;;;;;;;;;;
+*Campos obligatorios;;;;*Campos opcionales;;*Campos necesarios para el primer pago a un proveedor (Se pueden ingresar manualmente por el panel de Payana;;;;
+ID del proveedor (N° NIT/CC);Nombre Proveedor;N° Factura/Documento;Monto;Fecha emisión;Fecha Vencimiento;Tipo ID (NIT/Cédula);Mail Proveedor;Nombre del Banco;Tipo Cuenta (Ahorros/Corriente);N° de Cuenta
+22332233;csv 1;4000;$ 55.000,00;15/1/2023;20/2/2023;NIT;csv1@gmail.com;BANCOLOMBIA;Caja de ahorro;1300
+33223322;csv 2;4001;$ 31.000;15/1/2023;20/2/2023;CC;csv@gmail.com;NEQUI;Cuenta corriente;1305

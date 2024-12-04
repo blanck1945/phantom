@@ -1,0 +1,1 @@
+{"version":1,"defects":{"Warning":6,"RouterTest::it_add_routes":4},"times":{"Warning":0.159,"RouterTest::it_add_routes":0.235,"ViewModuleTest::routes_should_be_registers":0.029,"RouterTest::test_routes_are_properly_register":0.253}}

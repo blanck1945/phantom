@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: programwithgio-app
+    restart: always
+    working_dir: /var/www/
+    volumes:
+      - ../src:/var/www
+  nginx:
+    image: nginx:1.19-alpine
+    container_name: programwithgio-nginx
+    restart: always
+    ports:
+      - 9000:80
+    volumes:
+      - ../src:/var/www
+      - ./nginx:/etc/nginx/conf.d
+  db:
+    container_name: postgres
+    image: postgres:14-alpine
+    ports:
+      - 5432:5432
+    volumes:
+      - ./storage/postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=1234567
+      - POSTGRES_USER=admin
+      - POSTGRES_DB=kanas
+volumes:
+  site1: {}

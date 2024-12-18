@@ -1,8 +1,8 @@
 <?php
 
-namespace Controller\ViewController;
+namespace Controller\Home;
 
-class ViewController
+class HomeController
 {
 
     public function __construct() {}

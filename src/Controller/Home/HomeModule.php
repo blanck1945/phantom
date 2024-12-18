@@ -1,13 +1,12 @@
 <?php
 
-namespace Controller\ViewController;
+namespace Controller\Home;
 
-use Controller\ViewController\ViewController;
 use Core\Interfaces\ICoreModule;
 
-class ViewModule implements ICoreModule
+class HomeModule implements ICoreModule
 {
-    static public $controller = ViewController::class;
+    static public $controller = HomeController::class;
 
     static public function config()
     {

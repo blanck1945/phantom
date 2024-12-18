@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use Controller\Docs\DocsModule;
+use Controller\Home\HomeModule;
 use Core\Phantom;
-use Controller\ViewController\ViewModule;
 
 function server(): void
 {
@@ -12,7 +12,7 @@ function server(): void
         $app = new Phantom();
 
         $app->register_routes_map(
-            ViewModule::class,
+            HomeModule::class,
             DocsModule::class
         );
 

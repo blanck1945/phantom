@@ -2,16 +2,14 @@
 
 namespace Core\View;
 
-use Core\Response\Response;
+use Core\Response\PhantomResponse;
 
 class View
 {
 
     private string $view_path = '/pages/';
 
-    public function __construct(private string $base_url)
-    {
-    }
+    public function __construct(private string $base_url) {}
     public function get_view_path()
     {
         return $this->view_path;
@@ -34,7 +32,7 @@ class View
         if (file_exists($path)) {
             return $path;
         } else {
-            Response::set_http_response_code(404);
+            PhantomResponse::send404("View not found");
             return false;
         }
     }

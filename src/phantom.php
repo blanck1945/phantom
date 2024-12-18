@@ -2,6 +2,51 @@
 
 class PhantomCLI
 {
+
+    public function create_module(string $module_name)
+    {
+        echo 'CREATING MODULE ' . $module_name;
+        ## create php file with controller name inside Controller folder
+
+        mkdir('Controller/' . $module_name);
+
+        $module_file = fopen('Controller/' . $module_name . '/' . $module_name  . 'Module.php', 'w');
+
+        $module_content = '<?php
+
+namespace Controller\\' . $module_name . ';
+
+use Core\Interfaces\ICoreModule;
+
+class ' . $module_name . 'Module ' . ' implements ICoreModule
+{
+    static public $controller = ' . $module_name . 'Controller::class;
+
+    static public function config()
+    {
+        return [];
+    }
+
+    static public function inject()
+    {
+        return [];
+    }
+
+    static public function routes()
+    {
+        return [];
+    }
+
+}
+        ';
+
+        fwrite($module_file, $module_content);
+
+        fclose($module_file);
+
+        echo 'MODULE ' . $module_name . ' CREATED';
+    }
+
     function create_controller(string $controller_name)
     {
         echo 'CREATING CONTROLLER ' . $controller_name;
@@ -9,27 +54,15 @@ class PhantomCLI
 
         mkdir('Controller/' . $controller_name);
 
-        $controller_file = fopen('Controller/' . $controller_name . '/' . $controller_name . '.php', 'w');
+        $controller_file = fopen('Controller/' . $controller_name . '/' . $controller_name . 'Controller.php', 'w');
 
 
         $controller_content = '<?php
         
 namespace Controller\\' . $controller_name . ';
 
-use Core\Controller\ICoreController;
-
-class ' . $controller_name . ' implements ICoreController
-
+class ' . $controller_name . 'Controller
 {
-    static public function inject()
-    {
-        return [];
-    }
-
-    static public function routes() 
-    {
-        return [];
-    }
 }
         ';
 
@@ -47,13 +80,13 @@ class ' . $controller_name . ' implements ICoreController
 
         mkdir('Services/' . $service_name);
 
-        $service_file = fopen('Services/' . $service_name . '/' . $service_name . '.php', 'w');
+        $service_file = fopen('Controller/' . $service_name . '/' . $service_name . 'Service.php', 'w');
 
         $service_content = '<?php
         
-namespace Services\\' . $service_name . ';
+namespace Controller\\' . $service_name . ';
 
-class ' . $service_name . '
+class ' . $service_name . 'Service
 {
 }
         ';
@@ -69,6 +102,11 @@ class ' . $service_name . '
     function run_command($argv)
     {
         $command = $argv[1];
+
+        if ($command === 'create:module') {
+            $service_name = $argv[2];
+            $this->create_module($service_name);
+        }
 
         if ($command === 'create:controller') {
             $controller_name = $argv[2];

@@ -1,92 +1,103 @@
 
-<?
+<?php
 
+use Controller\ViewController\ViewController;
+use Controller\ViewController\ViewModule;
+use Core\Phantom;
+use Core\Request\PhantomRequest;
 use Core\Request\Request;
+use Core\Response\PhantomResponse;
 use Core\Router\Router;
+use Guards\IsAdmin;
+use Guards\IsWorkingTime;
 use PHPUnit\Framework\TestCase;
 
+// class BrowserRequestMock
+// {
+//     public function __construct($method, $uri)
+//     {
+//         $_SERVER['REQUEST_METHOD'] = $method;
+//         $_SERVER['REQUEST_URI'] = $uri;
+//     }
+// }
 
-class TestModule
-{
-    static public $controller = ViewController::class;
+// class TestModule
+// {
+//     static public $controller = ViewController::class;
 
-    static public function config()
-    {
-        return [
-            'metadata' => false,
-        ];
-    }
+//     static public function config()
+//     {
+//         return [
+//             'metadata' => false,
+//         ];
+//     }
 
-    static public function inject()
-    {
-        return [];
-    }
+//     static public function inject()
+//     {
+//         return [];
+//     }
 
-    static public function routes()
-    {
-        return  [
-            'routes' => [
-                '/test' => [
-                    'GET' => 'some_method',
-                ],
-                '/:test' => [
-                    'GET' => 'some_method'
-                ],
-            ]
-        ];
-    }
-}
+//     static public function routes()
+//     {
+//         return  [
+//             'routes' => [
+//                 '/test' => [
+//                     'GET' => 'some_method',
+//                 ],
+//                 '/:test' => [
+//                     'GET' => 'some_method'
+//                 ],
+//             ]
+//         ];
+//     }
+// }
 
 class RouterTest extends TestCase
 {
-    private $request;
-    private $router;
+    private Phantom $app;
+    private Router $router;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
-
-        $this->request = new Request();
-        $this->router = new Router($this->request);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/ff';
+        $this->app = new Phantom();
+        $this->router = $this->app->get_router();
     }
 
-    /** @test */
-    public function test_routes_are_properly_register()
+    /**
+     * @test
+     */
+    public function there_is_no_routes_when_created()
     {
-        $this->router->register([
-            TestModule::class,
-        ]);
+        $newRouter = new Router(new PhantomRequest(), null);
 
-        $expectedRoutes = [
-            TestModule::class,
-        ];
+        $this->assertEmpty($newRouter->get_handler());
+    }
 
-        $expectedNoQueryRoutes = [
-            '/test' => [
-                'GET' => 'some_method',
-            ],
-        ];
+    /**
+     * @test
+     */
+    public function set_routes()
+    {
+        $this->app->register_routes_map(ViewModule::class);
 
-        $expectedQueryRoutes = [
-            '/:test' => [
-                'GET' => 'some_method'
-            ],
-        ];
+        $this->assertEquals('get_ff_data', $this->router->get_handler());
+    }
 
-        $classRoutes =  $this->router->get_routes();
-        $classNoQueryRoutes =  $this->router->get_no_query_routes();
-        $classQueryRoutes =  $this->router->get_query_routes();
+    /**
+     * @test
+     */
+    public function check_exeption_when_no_route_match()
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/no_route';
 
-        ## Routes assertions
-        $this->assertIsArray($classRoutes);
-        $this->assertEquals($expectedRoutes, $classRoutes);
+        $this->assertEmpty($this->router->get_handler());
 
-        ## No Query Routes assertions
-        $this->assertIsArray($classNoQueryRoutes);
-        $this->assertEquals($expectedNoQueryRoutes, $classNoQueryRoutes);
+        $this->expectException(Exception::class);
 
-        ## Query Routes assertions
-        $this->assertIsArray($classQueryRoutes);
-        $this->assertEquals($expectedQueryRoutes, $classQueryRoutes);
+        $this->app->register_routes_map(ViewModule::class);
     }
 }

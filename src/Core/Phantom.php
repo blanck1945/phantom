@@ -6,10 +6,11 @@ use Core\Cors\Cors;
 use Core\Database\Database;
 use Core\Metadata\Metadata;
 use Core\Render\Render;
+use Core\Request\PhantomRequest;
 use Core\Router\Router;
-use Core\Request\Request;
 use Core\Server\Server;
 use Core\View\View;
+use DI\Container;
 
 class Phantom
 {
@@ -30,14 +31,15 @@ class Phantom
     private $view_handler;
     private $metadata_handler;
     private $database;
+    private $container;
 
     private $databaseReferenceName = 'database';
 
     public function __construct(private array $config = [])
     {
         self::$ROOT_DIR = dirname(__DIR__);
-        $this->request = new Request();
-        $this->database = Database::getInstance();
+        $this->request = new PhantomRequest();
+        $this->database = null;
         $this->router_handler = new Router($this->request, $this->database);
         $this->cors_handler = new Cors();
         $this->server_handler = new Server($config['metadata'] ?? [], $this->request, $this->router_handler);
@@ -47,23 +49,34 @@ class Phantom
         $this->configuration = $config['configuration'] ?? [];
         $this->method = $_SERVER['REQUEST_METHOD'];
         $this->path = $_SERVER['REQUEST_URI'];
+        $this->container = new Container([
+            'Core\Database\Database' => function () {
+                return Database::getInstance();
+            },
+        ]);
     }
 
     public function boostrap()
     {
-        $this->router_handler->prepare_execution();
+        $this->router_handler->execute_global_middlewares();
 
-        $route_to_execute = $this->router_handler->get_route_to_execute();
+        $this->router_handler->execute_route_middleware();
 
-        $route_to_execute = $this->router_handler->route_exists();
+        $this->router_handler->execute_guards();
 
-        $this->server_handler->valid_route_guard($route_to_execute);
+        $this->router_handler->execute_pipes();
 
-        $instance = $this->router_handler->get_controller_instance();
+        $route_has_dto = $this->router_handler->check_if_route_has_dto();
+
+        if ($route_has_dto) {
+            $this->router_handler->execute_dto();
+        }
+
+        $instance = $this->router_handler->get_controller_instance($this->container);
 
         $queries = $this->router_handler->get_queries();
 
-        $executable = $this->server_handler->execute_handler($route_to_execute, $instance, $queries);
+        $executable = $this->server_handler->execute_handler($instance, $queries);
 
         $this->server_handler->set_json_header($executable);
 
@@ -113,6 +126,18 @@ class Phantom
         $this->router_handler->register($routes);
     }
 
+    /**
+     * Root method to register routes 
+     * Routes are registers in separate arrays depending on if the have query params or not
+     * 
+     * @param array $routes
+     * @return void
+     */
+    public function register_routes_map(...$routes)
+    {
+        $this->router_handler->register_routes($routes);
+    }
+
     public function set_cors()
     {
         $this->cors_handler->enable_cors();
@@ -129,7 +154,7 @@ class Phantom
 
     public function set_middlewares($middlewares = [])
     {
-        $this->middlewares = $middlewares;
+        $this->router_handler->set_global_middlewares($middlewares);
     }
 
     public function set_guards($guards = [])
@@ -155,16 +180,16 @@ class Phantom
 
     public function setDb(string $connectionString, string $user, string $password, string $databaseReference = 'database')
     {
-        // $instance = Database::getInstance();
+        $instance = Database::getInstance();
 
-        // $instance->connect(
-        //     $connectionString,
-        //     $user,
-        //     $password,
-        // );
+        $instance->connect(
+            $user,
+            $password,
+            $connectionString,
+        );
 
 
-        // $this->databaseReferenceName = $databaseReference;
+        $this->databaseReferenceName = $databaseReference;
     }
 
     public function testDbConnection()
@@ -177,5 +202,15 @@ class Phantom
         return [
             $serviceName => $this->$service
         ];
+    }
+
+    /**
+     * Get Phantom Router
+     * 
+     * @return Router
+     */
+    public function get_router(): Router
+    {
+        return $this->router_handler;
     }
 }

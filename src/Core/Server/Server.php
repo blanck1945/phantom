@@ -2,21 +2,25 @@
 
 namespace Core\Server;
 
-use Core\Request\Request;
+use Core\Request\PhantomRequest;
 use Core\Router\Router;
 
 class Server
 {
 
-    public function __construct(private array $config, private Request $request_handler, private Router $router_handler) {}
+    public function __construct(private array $config, private PhantomRequest $request_handler, private Router $router_handler) {}
 
-    public function execute_handler($route_to_execute, $instance, $queries)
+    public function execute_handler($instance, $queries)
     {
-        $handler = $route_to_execute;
+        // $hasDto = $this->router_handler->getDto();
 
-        $hasDto = $this->router_handler->getDto();
+        if ($this->router_handler->get_queries()) {
+            foreach ($this->router_handler->get_queries() as $key => $value) {
+                $this->request_handler->setParam($key, $value);
+            }
+        }
 
-        $executable = $instance->{$handler}($this->request_handler);
+        $executable = $instance->{$this->router_handler->get_handler()}($this->request_handler);
 
         return $executable;
     }

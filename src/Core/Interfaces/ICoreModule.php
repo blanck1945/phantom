@@ -2,8 +2,6 @@
 
 namespace Core\Interfaces;
 
-use Core\Database\Database;
-
 /**
  * Interface ICoreModule
  * 

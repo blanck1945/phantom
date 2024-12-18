@@ -3,6 +3,7 @@
 namespace Core\Database;
 
 use Core\Autoload\AutoLoad;
+use Core\Env\Env;
 use Exception;
 use PDO;
 
@@ -16,6 +17,7 @@ class Database
      * see how this works in a moment.
      */
     private static $instances = [];
+    private static Database|null $instance = null;
 
     private static PDO $db;
 
@@ -41,15 +43,13 @@ class Database
      * The Singleton's constructor should always be private to prevent direct
      * construction calls with the `new` operator.
      */
-    protected function __construct()
+    private function __construct(private DatabaseHelpers $databaseHelpers)
     {
-        AutoLoad::loadAutoload();
-        $this->db_host = $_ENV['DB_HOST'];
-        $this->db_port = $_ENV['DB_PORT'];
-        $this->db_name = $_ENV['DB_NAME'];
-        $this->db_user = $_ENV['DB_USER'];
-        $this->db_password = $_ENV['DB_PASSWORD'];
-        $this->connect_db();
+        $this->db_host = Env::get('DB_HOST');
+        $this->db_port =  Env::get('DB_PORT');
+        $this->db_name = Env::get('DB_NAME');
+        $this->db_user = Env::get('DB_USER');
+        $this->db_password = Env::get('DB_PASSWORD');
     }
 
     public function connect_db()
@@ -87,12 +87,11 @@ class Database
      */
     public static function getInstance(): Database
     {
-        $cls = static::class;
-        if (!isset(self::$instances[$cls])) {
-            self::$instances[$cls] = new static;
+        if (!isset(self::$instance)) {
+            self::$instance = new static(new DatabaseHelpers());
         }
 
-        return self::$instances[$cls];
+        return self::$instance;
     }
     // if (!isset(self::$db)) {
     //     return self::connect();
@@ -100,25 +99,32 @@ class Database
     //     return self::$db;
     // }
 
-    public static function connect(): PDO | null
+    public static function connect(string $DB_USER, string $DB_PASSWORD, string $CONNECTION_STRING): void
     {
-        $db_user = $_ENV['DB_USER'];
-        $db_password = $_ENV['DB_PASSWORD'];
-        $connection_string = $_ENV['DB_CONNECTION_STRING'];
+        // $db_user = $_ENV['DB_USER'];
+        // $db_password = $_ENV['DB_PASSWORD'];
+        // $connection_string = $_ENV['DB_CONNECTION_STRING'];
 
         // $connection_string = "host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_password";
 
+
         try {
-            return self::$db = new PDO($connection_string, $db_user, $db_password);
+            // $db = new PDO('pgsql:host=postgres;port=5432;dbname=kanas', $DB_USER, $DB_PASSWORD);
+            // Establecer la conexión
+            $db = new PDO("pgsql:host=postgres;port=5432;dbname=kanas;", "admin", "1234567", [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+            ]);
+
+            self::$db = $db;
         } catch (Exception $e) {
             echo $e->getMessage();
-            return null;
         }
     }
 
-    public function testConnection()
+    public function testConnection(): void
     {
-        var_dump($this->db->getAttribute(PDO::ATTR_CONNECTION_STATUS));
+        var_dump(self::$db->getAttribute(PDO::ATTR_CONNECTION_STATUS));
     }
 
     public function insert() {}
@@ -202,4 +208,43 @@ class Database
     //         }
     //     }
     // }
+
+    public function findAll(string $table)
+    {
+        try {
+
+            $query = "SELECT * FROM $table";
+            $stmt = self::$db->prepare($query);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            echo $e->getMessage();
+            return [];
+        }
+    }
+
+    public function findOne(string $table, array $where, string|array $columns = ' * ')
+    {
+        $query = $this->databaseHelpers->handle_select_query($table, $columns);
+
+        $query = $this->databaseHelpers->handle_query_params($query, $where);
+
+        return $this->execute_query($query, $where);
+    }
+
+    public function execute_query($query, $where)
+    {
+        try {
+            $stmt = self::$db->prepare($query);
+            foreach ($where as $column => $value) {
+                $paramType = $this->databaseHelpers->get_PDO_param_type($value);
+                $stmt->bindValue(":$column", $value, $paramType);
+            }
+            $stmt->execute();
+            return $stmt->fetch();
+        } catch (Exception $e) {
+            echo $e->getMessage();
+            return [];
+        }
+    }
 }

@@ -3,37 +3,36 @@
 namespace Core\Router;
 
 use Core\Database\Database;
-use Core\Request\Request;
-use Core\Response\Response;
+use Core\Helpers\PhantomValidator;
+use Core\Request\PhantomRequest;
+use Core\Response\PhantomResponse;
+use DI\Container;
+use Exception;
 
 class Router
 {
     public $route_to_execute = null;
+    private $handler = null;
     public $module_to_execute = '';
     public const  INIT_POINT = '/';
 
     static $ctx = null;
     public function __construct(
-        private Request $request,
+        private PhantomRequest $request,
         private Database|null $database = null,
         private array $routes = [],
         private array $no_query_routes = [],
+        private array $global_middlewares = [],
+        private array $route_middlewares = [],
         private array $query_routes = [],
         private array $route_quries = [],
+        private array $route_guards = [],
+        private array $route_pipes = [],
+        private string $route_dto = '',
         private array $con = [],
         private $dto = null
     ) {
         self::$ctx = $con;
-    }
-
-    public function get_query_routes()
-    {
-        return $this->query_routes;
-    }
-
-    public function get_no_query_routes()
-    {
-        return $this->no_query_routes;
     }
 
     public function set_routes($routes)
@@ -51,20 +50,180 @@ class Router
         $this->query_routes = $routes;
     }
 
+    /**
+     * @param array $middlewares
+     * 
+     * @return void
+     */
+    public function set_global_middlewares(array $middlewares): void
+    {
+        $this->global_middlewares = $middlewares;
+    }
+
+    /*********************************************************************
+     * 
+     *************************** GETTERS *********************************
+     * 
+     ********************************************************************/
+
     public function get_queries()
     {
         return $this->route_quries;
     }
 
-    public function getDto()
+    public function getDto(): string
     {
-        $body = $this->get_request_body();
+        return $this->route_dto;
+    }
 
-        $dtoClass = $this->dto;
 
-        if (!$dtoClass) return null;
+    public function get_query_routes()
+    {
+        return $this->query_routes;
+    }
 
-        return new $dtoClass($body);
+    public function get_no_query_routes()
+    {
+        return $this->no_query_routes;
+    }
+
+    /**
+     * Global middlewares getter
+     * 
+     * @return array
+     */
+    public function get_global_middlewares(): array
+    {
+        return $this->global_middlewares;
+    }
+
+    /**
+     * Middlewares getter
+     * 
+     * @return array
+     */
+    public function get_middlewares(): array
+    {
+        return $this->route_middlewares;
+    }
+
+    /**
+     * Guards getter
+     * 
+     * @return array
+     */
+    public function get_guards(): array
+    {
+        return $this->route_guards;
+    }
+
+    public function get_handler()
+    {
+        return $this->handler;
+    }
+
+    /*********************************************************************
+     * 
+     *********************************************************************
+     * 
+     ********************************************************************/
+
+    //---------------------------------------------------------------------
+
+    /*********************************************************************
+     * 
+     *************************** EXECUTERS *******************************
+     * 
+     ********************************************************************/
+
+    /**
+     * Execute route middlewares
+     * 
+     * @return void
+     */
+    public function execute_global_middlewares()
+    {
+        $middlewares = $this->get_global_middlewares();
+
+        if (empty($middlewares)) return;
+
+        foreach ($middlewares as $middleware) {
+            $exec = new $middleware();
+            $exec->handler();
+        }
+    }
+
+    public function execute_route_middleware()
+    {
+        $middlewares = $this->get_middlewares();
+
+        if (empty($middlewares)) return;
+
+        foreach ($middlewares as $middleware) {
+            $middleware->handler($this->request);
+        }
+    }
+
+    /**
+     * Execute route guards
+     * 
+     * @return void
+     */
+    public function execute_guards()
+    {
+        if (empty($this->get_guards())) return;
+
+        $guards = $this->get_guards();
+
+        foreach ($guards as $guard) {
+            $exec = new $guard();
+            $exec->handler();
+        }
+    }
+
+    /**
+     * Execute route dto
+     * 
+     * @return array
+     */
+    public function execute_dto(): array
+    {
+        $dto = $this->getDto();
+
+        $body = $_POST;
+
+        $dto_instance = new $dto($body);
+
+        return $dto_instance->apply_validation();
+    }
+
+    /**
+     * Summary params pipes
+     * 
+     * @return void
+     */
+    public function execute_pipes()
+    {
+        if (empty($this->route_pipes)) return;
+
+        $pipes = $this->route_pipes;
+
+        foreach ($pipes as $pipe) {
+            $validator = new PhantomValidator($pipe['prop'], $pipe['pipes']);
+
+            $validator->validate($this->route_quries);
+        }
+    }
+
+    /*********************************************************************
+     * 
+     *********************************************************************
+     * 
+     ********************************************************************/
+
+    public function check_if_route_has_dto()
+    {
+        return $this->getDto();
     }
 
     public function define_route_and_module($routes, $route_to_execute)
@@ -80,13 +239,158 @@ class Router
             $method = $this->request->get_method();
 
             if (key_exists($method, $route_match)) {
-
                 $this->route_to_execute = $route_match[$method];
                 $this->module_to_execute = $module;
                 $this->dto = $route_match[$method]['dto'] ?? null;
                 $this->route_quries = $this->route_to_execute[$route_key]['query'] ?? [];
             }
         }
+    }
+
+
+    public function register_routes($phantomRoutes)
+    {
+        $moduleRoutes = [];
+        $route_to_call = null;
+        $module = null;
+
+        foreach ($phantomRoutes as $handler) {
+            $newModule = new $handler();
+            $moduleRoutes = $newModule::routes();
+
+            if (array_key_exists($_SERVER['REQUEST_URI'], $moduleRoutes)) {
+                $route_to_call = $moduleRoutes[$_SERVER['REQUEST_URI']];
+                $module = $handler;
+            } else {
+                foreach ($moduleRoutes as $path => $routes) {
+
+                    // Verificamos si la ruta tiene un parámetro dinámico con el formato /:{propiedad}
+                    if (strpos($path, ':') !== false) {
+
+                        // Convertimos el patrón en una expresión regular
+                        $pattern = preg_replace('/:\w+/', '([^/]+)', $path);
+                        $pattern = '#^' . $pattern . '$#';
+
+                        $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH); // Asegurarse de trabajar solo con el path
+
+                        if (preg_match($pattern, $current_path, $matches)) {
+                            $route_to_call = $moduleRoutes[$path];
+                            $module = $handler;
+                            $this->set_queries($path, $matches);
+                        }
+                    }
+                };
+            }
+        };
+
+        if (!$route_to_call) throw new Exception('Ruta no encontrada');
+
+        $method = $this->request->get_method();
+        $executable = $route_to_call[$method];
+        $this->set_handler($executable);
+        $this->set_guards($executable);
+        $this->set_pipes($executable);
+        $this->set_middlewares($executable);
+
+        $this->route_to_execute = [$_SERVER['REQUEST_URI'] => [$method => $route_to_call[$method]]];
+        $this->module_to_execute = $module;
+
+        if ($method === 'POST' && array_key_exists('dto', $route_to_call[$method])) {
+            $this->route_dto = $route_to_call[$method]['dto'];
+        }
+    }
+
+    /**
+     * Set handler
+     * 
+     * @param array $handler
+     * 
+     * @return void
+     */
+    public function set_handler(array|string $handler)
+    {
+        $this->handler = is_array($handler) && array_key_exists('controller', $handler)
+            ? $handler['controller']
+            : $handler;
+    }
+
+    /**
+     * Set guards
+     * 
+     * @param array $guards
+     * 
+     * @return void
+     */
+    public function set_guards(array|string $guards)
+    {
+        if (is_string($guards)) {
+            $this->route_guards = [];
+            return;
+        }
+
+        $this->route_guards = array_key_exists('guards', $guards)
+            ? (array) $guards['guards']
+            : [];
+    }
+
+    /**
+     * Set pipes
+     * 
+     * @param array $pipes
+     * 
+     * @return void
+     */
+    public function set_pipes(array|string $pipes)
+    {
+        if (is_string($pipes)) {
+            $this->route_pipes = [];
+            return;
+        }
+
+        $this->route_pipes = array_key_exists('params', $pipes)
+            ? $pipes['params']
+            : [];
+    }
+
+    /**
+     * Set middlewares
+     * 
+     * @param array $middlewares
+     * 
+     * @return void
+     */
+    public function set_middlewares(array|string $middlewares)
+    {
+        if (is_string($middlewares)) {
+            $this->route_middlewares = [];
+            return;
+        }
+
+        $this->route_middlewares = array_key_exists('middlewares', $middlewares)
+            ? (array) $middlewares['middlewares']
+            : [];
+    }
+
+    public function set_queries($path, $matches)
+    {
+        // split array witn the caracter / and remove the first element
+        $split_path = explode('/', $path);
+        array_shift($split_path);
+
+        $queries = [];
+
+        if (count($split_path) === 1) {
+            $key = explode(':', $split_path[0]);
+            $queries[$key[1]] = $matches[1];
+        } else {
+            for ($i = 0; $i < count($split_path); $i++) {
+                $key = explode(':', $split_path[$i]);
+                $queries[$key[1]] = $matches[$i];
+            }
+            array_shift($queries);
+        }
+
+        $this->route_quries = $queries;
     }
 
     /**
@@ -132,7 +436,7 @@ class Router
     {
         $route_to_execute = $this->get_route_to_execute();
 
-        if (!$route_to_execute) return Response::set_http_response_code(404);
+        if (!$route_to_execute) return PhantomResponse::send404('Ruta no encontrada');
 
         $this->define_route_and_module($this->routes, $route_to_execute);
     }
@@ -145,9 +449,13 @@ class Router
 
         $route_exists =  $no_query_routes[$path] ?? false;
 
+        print_r($route_exists);
+
         if ($route_exists) {
             return [$path => $route_exists];
         }
+
+        echo "Route does not exist";
 
         $query_routes = $this->get_query_routes();
         $split_path = explode('/', $path);
@@ -172,9 +480,18 @@ class Router
         }
     }
 
-    public function get_controller_instance()
+    public function get_controller_instance(Container $container)
     {
         $injectables = $this->module_to_execute::inject();
+        $dependencies = [];
+
+        try {
+            foreach ($injectables as $key => $injectable) {
+                $dependencies[] = $container->get($injectable);
+            }
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
 
         $controller_to_execute = $this->module_to_execute::$controller;
 
@@ -186,7 +503,7 @@ class Router
         // }
 
         ## Construct Controller class
-        return new $controller_to_execute(...$injectables);
+        return new $controller_to_execute(...$dependencies);
     }
 
     public function create_route_ctx($configuration, $metadata)

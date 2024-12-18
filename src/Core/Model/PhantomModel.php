@@ -7,7 +7,7 @@ use Core\Database\Database;
 class PhantomModel
 {
     public string $table;
-    public array $fillable = [];
+    private array $fillable = [];
     public function __construct(private Database $db) {}
     public function findAll()
     {

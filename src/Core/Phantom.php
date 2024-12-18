@@ -47,8 +47,6 @@ class Phantom
         $this->render_handler = new Render($this->view_handler);
         $this->metadata_handler = new Metadata($config['metadata'] ?? []);
         $this->configuration = $config['configuration'] ?? [];
-        $this->method = $_SERVER['REQUEST_METHOD'];
-        $this->path = $_SERVER['REQUEST_URI'];
         $this->container = new Container([
             'Core\Database\Database' => function () {
                 return Database::getInstance();
@@ -58,6 +56,8 @@ class Phantom
 
     public function boostrap()
     {
+        $this->check_if_we_should_execute_route();
+
         $this->router_handler->execute_global_middlewares();
 
         $this->router_handler->execute_route_middleware();
@@ -105,6 +105,18 @@ class Phantom
         $view = $this->view_handler->get_view($executable['view'] ?? null);
 
         $this->render_handler->render($executable, $route_config, $view);
+    }
+
+    public function check_if_we_should_execute_route()
+    {
+        if (empty($this->router_handler->get_module_to_execute())) {
+            $route_config = $this->router_handler->get_controller_config();
+
+            $view = $this->view_handler->get_view('404.blade.php');
+
+            $this->render_handler->render([], $route_config, $view);
+            exit;
+        }
     }
 
     public function set_configuration($error_page = [], $port = 3000)

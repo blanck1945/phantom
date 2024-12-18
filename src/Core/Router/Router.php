@@ -3,6 +3,7 @@
 namespace Core\Router;
 
 use Core\Database\Database;
+use Core\Exception\ViewException;
 use Core\Helpers\PhantomValidator;
 use Core\Request\PhantomRequest;
 use Core\Response\PhantomResponse;
@@ -11,10 +12,13 @@ use Exception;
 
 class Router
 {
+    public const  INIT_POINT = '/';
     public $route_to_execute = null;
     private $handler = null;
+
+    private ViewException $viewException;
     public $module_to_execute = '';
-    public const  INIT_POINT = '/';
+
 
     static $ctx = null;
     public function __construct(
@@ -30,9 +34,10 @@ class Router
         private array $route_pipes = [],
         private string $route_dto = '',
         private array $con = [],
-        private $dto = null
+        private string|null $dto = null
     ) {
         self::$ctx = $con;
+        $this->viewException = new ViewException();
     }
 
     public function set_routes($routes)
@@ -120,6 +125,16 @@ class Router
     public function get_handler()
     {
         return $this->handler;
+    }
+
+    /**
+     * Get module to execute
+     * 
+     * @return string
+     */
+    public function get_module_to_execute(): string
+    {
+        return $this->module_to_execute;
     }
 
     /*********************************************************************
@@ -283,7 +298,7 @@ class Router
             }
         };
 
-        if (!$route_to_call) throw new Exception('Ruta no encontrada');
+        if (!$route_to_call) return $this->viewException->notFound();
 
         $method = $this->request->get_method();
         $executable = $route_to_call[$method];
@@ -432,56 +447,12 @@ class Router
         $this->set_query_routes($query_routes);
     }
 
-    public function prepare_execution()
-    {
-        $route_to_execute = $this->get_route_to_execute();
-
-        if (!$route_to_execute) return PhantomResponse::send404('Ruta no encontrada');
-
-        $this->define_route_and_module($this->routes, $route_to_execute);
-    }
-
-    public function get_route_to_execute()
-    {
-        $no_query_routes = $this->get_no_query_routes();
-
-        $path = $this->request->get_path();
-
-        $route_exists =  $no_query_routes[$path] ?? false;
-
-        print_r($route_exists);
-
-        if ($route_exists) {
-            return [$path => $route_exists];
-        }
-
-        echo "Route does not exist";
-
-        $query_routes = $this->get_query_routes();
-        $split_path = explode('/', $path);
-        $split_path_first_element = count($split_path) === 2 ? '' : $split_path[1];
-        $split_path_last_element = $split_path[count($split_path) - 1];
-
-        foreach ($query_routes as $key => $route) {
-
-            $split_key = explode('/:', $key);
-
-            $split_key_first_element = $split_key[0];
-
-            if ($split_path_first_element === '') {
-                $this->request->setParam($split_key[1], $split_path_last_element);
-                return [$key => array_merge($route, ['query' => [$split_key[1] => $split_path_last_element]])];
-            }
-
-            if ('/' . $split_path_first_element === $split_key_first_element) {
-                $this->request->setParam($split_key[1], $split_path_last_element);
-                return [$key => array_merge($route, ['query' => [$split_key[1] => $split_path_last_element]])];
-            }
-        }
-    }
-
     public function get_controller_instance(Container $container)
     {
+        if (empty($this->module_to_execute)) {
+            return $this->viewException->notFound();
+        }
+
         $injectables = $this->module_to_execute::inject();
         $dependencies = [];
 
@@ -506,35 +477,6 @@ class Router
         return new $controller_to_execute(...$dependencies);
     }
 
-    public function create_route_ctx($configuration, $metadata)
-    {
-        ## We create APP context
-        $context = [
-            'configuration' => $configuration,
-            'metadata' => $metadata,
-            'request' => $this->request,
-        ];
-    }
-
-    public function get_request_body()
-    {
-        $body = [];
-
-        if ($this->request->get_method() === 'GET') {
-            foreach ($_GET as $key => $value) {
-                $body[$key] = filter_input(INPUT_GET, $key, FILTER_SANITIZE_SPECIAL_CHARS);
-            }
-        }
-
-        if ($this->request->get_method() === 'POST') {
-            foreach ($_POST as $key => $value) {
-                $body[$key] = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
-            }
-        }
-
-        return $body;
-    }
-
     public function get_controller_config()
     {
         if (method_exists($this->module_to_execute, 'config')) {
@@ -543,31 +485,6 @@ class Router
 
         return [];
     }
-
-
-    static public function guard_route(string $route_method, $callback)
-    {
-        $method = $_SERVER['REQUEST_METHOD'];
-
-        if ($method === $route_method) {
-            return $callback();
-        }
-    }
-
-
-
-
-
-    static function execute_route_with_params(string $path, string $route_method, $callback)
-    {
-        $url = $_SERVER['REQUEST_URI'];
-        $query_param = explode('/', $url)[2];
-
-        $route_to_execute = $callback($query_param);
-
-        return $route_to_execute;
-    }
-
 
     static public function execute_route(string $path, string $route_method, $callback)
     {

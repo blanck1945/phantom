@@ -2,7 +2,7 @@
 
 
 @section('content')
-    <img src="images/th.jpeg" alt="boogiepop">
+    <img src="images/phantom.jpeg" alt="boogiepop">
 
     <h1 class="text-bold text-2xl my-4">{{ $page_data['framework']}} Framework: Una Arquitectura Modular Inspirada en NestJS</h1>
     <p class='text-center'>{{ $page_data['framework']}} es un framework de PHP diseñado para el desarrollo de aplicaciones escalables, estructuradas y altamente

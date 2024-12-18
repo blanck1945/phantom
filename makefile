@@ -1,10 +1,10 @@
 install: 
 	cd .\src\ && composer install
 
-build:
+up:
 	cd .\docker\ && docker-compose up -d --build
 
-close:
+down:
 	cd .\docker\ && docker-compose down
 
 rebuild:

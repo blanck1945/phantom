@@ -94,7 +94,12 @@ class Phantom
             }
         } else {
             $global_metadata = $this->metadata_handler->get_global_metadata();
-            $executable['metadata'] = $global_metadata;
+            $executable['metadata'] = [
+                ...$global_metadata,
+                'css' => [],
+                'js' => [],
+                'favicon' => ''
+            ];
         }
 
         $view = $this->view_handler->get_view($executable['view'] ?? null);

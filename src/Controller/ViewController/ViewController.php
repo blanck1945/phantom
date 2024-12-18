@@ -10,7 +10,7 @@ class ViewController
     public function home()
     {
         return [
-            'view' => 'home.blade.php',
+            'view' => 'phantom.blade.php',
             'hello' => 'Hello World',
             'framework' => 'Phantom'
         ];

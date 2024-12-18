@@ -54,6 +54,6 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 
 RUN docker-php-ext-install pdo pdo_pgsql pgsql
 
-COPY ./nginx/php.ini /usr/local/etc/php/
+# COPY ./nginx/php.ini /usr/local/etc/php/
 
 WORKDIR /var/www

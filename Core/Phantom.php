@@ -119,6 +119,11 @@ class Phantom
     {
         // read Cache/views 
         $cacheViews = __DIR__ . '/Cache/views/';
+
+        if (!is_dir($cacheViews)) {
+            return;
+        }
+
         $cacheViewsFiles = scandir($cacheViews);
 
         $requestPath = $this->request->get_path();

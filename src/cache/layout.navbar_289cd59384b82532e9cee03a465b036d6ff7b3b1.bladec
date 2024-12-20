@@ -1,9 +1,0 @@
-<nav>
- <a href="/">Home</a>
- <a href="/read/ref.csv">Tabla</a>
- <a href="/login">Ingresa</a>
-</nav>
-
-<main>
- <?php echo $this->yieldContent('content'); ?>
-</main>

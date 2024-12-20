@@ -8,10 +8,7 @@ down:
 	cd .\docker\ && docker-compose down
 
 rebuild:
-	make close && make build
-
-cb:
-	make close && make build
+	make down && make up
 
 exec:
 	cd .\docker\ && docker-compose exec -it  sh

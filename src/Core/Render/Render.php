@@ -43,7 +43,7 @@ class Render
 
             // write blade view to cache
 
-            if (Env::get('DEV_MODE') === 'false') {
+            if (Env::get('DEV_MODE') === 'development') {
                 file_put_contents($coreCache . $filename . '.blade.php', $bladeView);
             }
 

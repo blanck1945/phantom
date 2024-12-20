@@ -20,6 +20,9 @@ class Server
             }
         }
 
+        // var_dump($instance);
+        var_dump($this->router_handler->get_handler());
+
         $executable = $instance->{$this->router_handler->get_handler()}($this->request_handler);
 
         return $executable;

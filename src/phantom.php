@@ -1,7 +1,19 @@
 <?php
 
+
+require_once 'vendor/autoload.php';
+
+use Core\CLI\Boogie;
+
 class PhantomCLI
 {
+    public function all($service_name): void
+    {
+        $this->create_module($service_name);
+        $this->create_controller($service_name);
+        $this->createService($service_name);
+    }
+
 
     public function create_module(string $module_name)
     {
@@ -103,22 +115,16 @@ class ' . $service_name . 'Service
     {
         $command = $argv[1];
 
-        if ($command === 'create:module') {
-            $service_name = $argv[2];
-            $this->create_module($service_name);
-        }
+        $container = new DI\Container();
+        $boogie = $container->get(Boogie::class);
 
-        if ($command === 'create:controller') {
-            $controller_name = $argv[2];
-            $this->create_controller($controller_name);
-        }
-
-        if ($command === 'create:service') {
-            $service_name = $argv[2];
-            $this->createService($service_name);
-        }
-
-        echo "No command found - " . $command;
+        match ($command) {
+            'create:all' => $boogie->create_all($argv[2]),
+            'create:module' => $boogie->create_module($argv[2]),
+            'create:controller' => $boogie->create_controller($argv[2]),
+            'create:service' => $boogie->create_service($argv[2]),
+            default => var_dump("No command found - " . $command),
+        };
     }
 }
 

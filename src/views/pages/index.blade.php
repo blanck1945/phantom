@@ -2,9 +2,13 @@
 
 
 @section('content')
-    <img src="images/phantom.jpeg" alt="boogiepop">
+    <img class="rounded-lg" src="images/phantom.jpeg" alt="boogiepop">
 
-    <h1 class="text-bold text-2xl my-4">{{ $page_data['framework']}} Framework: Una Arquitectura Modular Inspirada en NestJS</h1>
+    <div class="my-4">
+
+        <h1 class="font-bold text-center text-3xl">{{ $page_data['framework']}} Framework</h1>
+        <p class="font-semibold text-2xl text-center">Una Arquitectura Modular Inspirada en NestJS</p>
+    </div>
     <p class='text-center'>{{ $page_data['framework']}} es un framework de PHP diseñado para el desarrollo de aplicaciones escalables, estructuradas y altamente
         mantenibles. Inspirado en la arquitectura de NestJS, Phantom adopta un enfoque modular que organiza el código en
         componentes bien definidos como módulos, controladores, servicios, guardias, middlewares y pipes. Esta estructura

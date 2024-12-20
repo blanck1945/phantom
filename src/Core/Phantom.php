@@ -4,6 +4,7 @@ namespace Core;
 
 use Core\Cors\Cors;
 use Core\Database\Database;
+use Core\Env\Env;
 use Core\Metadata\Metadata;
 use Core\Render\Render;
 use Core\Request\PhantomRequest;
@@ -56,6 +57,8 @@ class Phantom
 
     public function boostrap()
     {
+        $this->read_cache_file($this->request->get_path());
+
         $this->check_if_we_should_execute_route();
 
         $this->router_handler->execute_global_middlewares();
@@ -101,6 +104,11 @@ class Phantom
                 'favicon' => ''
             ];
         }
+        $DEV_MODE = Env::get('DEV_MODE');
+
+        if ($DEV_MODE === 'false') {
+            $this->write_cache_file($this->request->get_path(), $executable['view'] ?? null);
+        }
 
         $view = $this->view_handler->get_view($executable['view'] ?? null);
 
@@ -109,6 +117,33 @@ class Phantom
 
     public function check_if_we_should_execute_route()
     {
+        // read Cache/views 
+        $cacheViews = __DIR__ . '/Cache/views/';
+        $cacheViewsFiles = scandir($cacheViews);
+
+        $requestPath = $this->request->get_path();
+
+        foreach ($cacheViewsFiles as $file) {
+            if ($requestPath === '/' && $file === 'index.blade.php') {
+                $cacheFile = $cacheViews . $file;
+                $cacheFileContent = file_get_contents($cacheFile);
+
+                echo $cacheFileContent;
+                exit;
+            }
+
+            // remove first / from request path
+            $parsedRequestPath = ltrim($requestPath, '/');
+
+            if ($file === $parsedRequestPath . '.blade.php') {
+                $cacheFile = $cacheViews . $file;
+                $cacheFileContent = file_get_contents($cacheFile);
+
+                echo $cacheFileContent;
+                exit;
+            }
+        }
+
         if (empty($this->router_handler->get_module_to_execute())) {
             $route_config = $this->router_handler->get_controller_config();
 
@@ -117,6 +152,62 @@ class Phantom
             $this->render_handler->render([], $route_config, $view);
             exit;
         }
+    }
+
+    public function read_cache_file($path)
+    {
+        // Ruta del archivo JSON
+        $jsonFile = __DIR__ . '/Cache/views/directory.json';
+
+        // Si el archivo existe, leer el contenido
+        if (file_exists($jsonFile)) {
+            $jsonContent = file_get_contents($jsonFile);
+            $defaultData = json_decode($jsonContent, true) ?? [];
+
+            if (isset($defaultData[$path])) {
+                $viewDir = __DIR__ . '/../views/pages/';
+                $view = $viewDir . $defaultData[$path];
+
+                $this->render_handler->render_from_cache($view);
+                echo "render from cache";
+                exit;
+            }
+        }
+    }
+
+    public function write_cache_file(string $path, $view)
+    {
+        echo "write_cache_file";
+        // Ruta del archivo JSON
+        $jsonFile = __DIR__ . '/Cache/views/directory.json';
+
+        // Verificar si el directorio existe, si no, crearlo
+        $directory = __DIR__ . '/Cache/views';
+        if (!is_dir($directory)) {
+            if (!mkdir($directory, 0777, true) && !is_dir($directory)) {
+                die("Error: No se pudo crear el directorio.");
+            }
+        }
+
+        // Si el archivo existe, leer el contenido
+        if (file_exists($jsonFile)) {
+            $jsonContent = file_get_contents($jsonFile);
+            $defaultData = json_decode($jsonContent, true) ?? [];
+        }
+        // Agregar el nuevo dato
+        $defaultData[$path] = $view;
+
+        // Guardar el JSON actualizado
+        $jsonView = json_encode($defaultData, JSON_PRETTY_PRINT);
+        file_put_contents($jsonFile, $jsonView);
+
+        // crear el archivo JSON
+        // $cache = __DIR__ . '/Cache/views/';
+        // $cacheFile = $cache . $path . '.blade.php';
+
+        // if (!file_exists($cacheFile)) {
+        //     file_put_contents($cacheFile, $view);
+        // }
     }
 
     public function set_configuration($error_page = [], $port = 3000)

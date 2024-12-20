@@ -1,6 +1,6 @@
 <?php
 
-namespace Core\Pipes;
+namespace Core\Helpers\Pipes;
 
 class IsString
 {

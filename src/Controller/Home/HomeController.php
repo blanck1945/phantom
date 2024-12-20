@@ -10,7 +10,7 @@ class HomeController
     public function home()
     {
         return [
-            'view' => 'phantom.blade.php',
+            'view' => 'index.blade.php',
             'hello' => 'Hello World',
             'framework' => 'Phantom'
         ];

@@ -35,6 +35,15 @@ class Render
             $views = __DIR__ . '/../../views/pages/';
             $cache = __DIR__ . '/../Cache/blade/';
             $coreCache = __DIR__ . '/../Cache/views/';
+
+            if (!is_dir($cache)) {
+                mkdir($cache, 0755, true);
+            }
+
+            if (!is_dir($coreCache)) {
+                mkdir($coreCache, 0755, true);
+            }
+
             // Inicializar BladeOne
             $blade = new BladeOne($views, $cache, BladeOne::MODE_AUTO);
 

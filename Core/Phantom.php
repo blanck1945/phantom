@@ -48,11 +48,7 @@ class Phantom
         $this->render_handler = new Render($this->view_handler);
         $this->metadata_handler = new Metadata($config['metadata'] ?? []);
         $this->configuration = $config['configuration'] ?? [];
-        $this->container = new Container([
-            'Core\Database\Database' => function () {
-                return Database::getInstance();
-            },
-        ]);
+        $this->container = new Container();
     }
 
     public function boostrap()

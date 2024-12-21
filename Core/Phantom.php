@@ -2,6 +2,7 @@
 
 namespace Core;
 
+use Core\ContainerConfig\ContainerConfig;
 use Core\Cors\Cors;
 use Core\Database\Database;
 use Core\Env\Env;
@@ -48,7 +49,7 @@ class Phantom
         $this->render_handler = new Render($this->view_handler);
         $this->metadata_handler = new Metadata($config['metadata'] ?? []);
         $this->configuration = $config['configuration'] ?? [];
-        $this->container = new Container();
+        $this->container = new Container(ContainerConfig::get_config());
     }
 
     public function boostrap()

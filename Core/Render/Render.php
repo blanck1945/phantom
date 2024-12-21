@@ -33,7 +33,7 @@ class Render
             $filename = pathinfo($filenameWithoutTemplateExtension, PATHINFO_FILENAME);
 
             $views = __DIR__ . '/../../views/pages/';
-            $cache = __DIR__ . '/../../cache/';
+            $cache = __DIR__ . '/../Cache/blade/';
             $coreCache = __DIR__ . '/../Cache/views/';
             // Inicializar BladeOne
             $blade = new BladeOne($views, $cache, BladeOne::MODE_AUTO);

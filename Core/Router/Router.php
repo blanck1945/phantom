@@ -6,7 +6,6 @@ use Core\Database\Database;
 use Core\Exception\ViewException;
 use Core\Helpers\PhantomValidator;
 use Core\Request\PhantomRequest;
-use Core\Response\PhantomResponse;
 use DI\Container;
 use Exception;
 
@@ -207,7 +206,7 @@ class Router
 
         $body = $_POST;
 
-        $dto_instance = new $dto($body);
+        $dto_instance = new $dto(...$body);
 
         return $dto_instance->apply_validation();
     }
@@ -310,7 +309,11 @@ class Router
         $this->route_to_execute = [$_SERVER['REQUEST_URI'] => [$method => $route_to_call[$method]]];
         $this->module_to_execute = $module;
 
-        if ($method === 'POST' && array_key_exists('dto', $route_to_call[$method])) {
+        if (
+            $method === 'POST' &&
+            is_array($route_to_call[$method]) &&
+            array_key_exists('dto', $route_to_call[$method])
+        ) {
             $this->route_dto = $route_to_call[$method]['dto'];
         }
     }

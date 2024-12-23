@@ -26,7 +26,7 @@ class View
             return false;
         }
 
-        $view_path =     $this->view_path . $view;
+        $view_path = $this->view_path . $view;
         $path = $this->base_url . $view_path;
 
         if (file_exists($path)) {

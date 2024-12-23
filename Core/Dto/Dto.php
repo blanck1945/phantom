@@ -42,12 +42,16 @@ class Dto
     {
         $errors = [];
 
-
-
         foreach ($this->validations as $key => $validation) {
             foreach ($validation as $pipe) {
-                $exec = new $pipe();
-                $result = $exec->handler($this->$key, $key);
+                $pipe_class = $pipe;
+
+                if (is_array($pipe)) {
+                    $pipe_class = $pipe[0];
+                }
+
+                $exec = new $pipe_class($key, $this->$key);
+                $result = $exec->handler($this->$key, $key, $pipe[1] ?? []);
 
                 if ($result) {
                     $errors[] = $result;

@@ -23,7 +23,8 @@
       "Routes\\": "Routes",
       "Services\\": "Services",
       "Middlewares\\": "Middlewares",
-      "Guards\\": "Guards"
+      "Guards\\": "Guards",
+      "src\\": "src/"
     }
   },
   "require-dev": {

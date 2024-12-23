@@ -6,6 +6,7 @@ use Controller\Docs\DocsModule;
 use Controller\Home\HomeModule;
 use Controller\Menu\MenuModule;
 use Controller\Product\ProductModule;
+use Controller\User\UserModule;
 use Core\Phantom;
 
 function server(): void
@@ -15,7 +16,8 @@ function server(): void
 
         $app->register_routes_map(
             HomeModule::class,
-            DocsModule::class
+            DocsModule::class,
+            UserModule::class,
         );
 
         $app->boostrap();

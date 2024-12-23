@@ -2,7 +2,7 @@
 
 namespace Core;
 
-use Core\ContainerConfig\ContainerConfig;
+use Core\Helpers\Container\ContainerConfig;
 use Core\Cors\Cors;
 use Core\Database\Database;
 use Core\Env\Env;

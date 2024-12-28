@@ -1,6 +1,6 @@
 <?php
 
-namespace Controller\Docs;
+namespace App\Http\Controller\Docs;
 
 class DocsController
 {

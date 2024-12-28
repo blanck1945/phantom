@@ -456,16 +456,16 @@ class Router
             return $this->viewException->notFound();
         }
 
-        $injectables = $this->module_to_execute::inject();
-        $dependencies = [];
+        // $injectables = $this->module_to_execute::inject();
+        // $dependencies = [];
 
-        try {
-            foreach ($injectables as $key => $injectable) {
-                $dependencies[] = $container->get($injectable);
-            }
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
+        // try {
+        //     foreach ($injectables as $key => $injectable) {
+        //         $dependencies[] = $container->get($injectable);
+        //     }
+        // } catch (Exception $e) {
+        //     echo $e->getMessage();
+        // }
 
         $controller_to_execute = $this->module_to_execute::$controller;
 
@@ -477,7 +477,8 @@ class Router
         // }
 
         ## Construct Controller class
-        return new $controller_to_execute(...$dependencies);
+        return $container->get($controller_to_execute);
+        // return new $controller_to_execute(...$dependencies);
     }
 
     public function get_controller_config()

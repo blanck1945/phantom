@@ -2,6 +2,7 @@
 
 namespace Core;
 
+use config\Filesystems;
 use Core\Cors\Cors;
 use Core\Database\Database;
 use Core\Env\Env;
@@ -13,6 +14,7 @@ use Core\Router\Router;
 use Core\Server\Server;
 use Core\View\View;
 use DI\Container;
+use Dotenv\Dotenv;
 
 class Phantom
 {
@@ -110,6 +112,18 @@ class Phantom
         $view = $this->view_handler->get_view($executable['view'] ?? null);
 
         $this->render_handler->render($executable, $route_config, $view);
+    }
+
+    /**
+     * Load environment variables 
+     * 
+     * @return void
+     * 
+     */
+    public function loadEnv()
+    {
+        $dotenv = Dotenv::createImmutable(dirname(Filesystems::$envPath));
+        $dotenv->load();
     }
 
     public function check_if_we_should_execute_route()

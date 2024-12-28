@@ -19,12 +19,11 @@
       "App\\": "App/",
       "Core\\": "Core/",
       "Core\\AutoLoad\\": "Core/Autoload",
-      "Controller\\": "Controller/",
-      "Routes\\": "Routes",
-      "Services\\": "Services",
       "Middlewares\\": "Middlewares",
-      "Guards\\": "Guards",
-      "src\\": "src/"
+      "src\\": "src/",
+      "app\\": "app/",
+      "boostrap\\": "boostrap/",
+      "config\\": "config/"
     }
   },
   "require-dev": {

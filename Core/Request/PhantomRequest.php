@@ -59,6 +59,16 @@ class PhantomRequest
         return $this->bodyDto;
     }
 
+    public function setBody($body)
+    {
+        $this->body = $body;
+    }
+
+    public function setBodyProperty($key, $value)
+    {
+        $this->body[$key] = $value;
+    }
+
     public function getBody()
     {
         return $this->body;

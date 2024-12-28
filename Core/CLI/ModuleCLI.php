@@ -2,6 +2,7 @@
 
 namespace Core\CLI;
 
+use config\Filesystems;
 use Core\Helpers\FileHandler;
 
 class ModuleCLI
@@ -12,31 +13,21 @@ class ModuleCLI
     {
         echo 'CREATING MODULE ' . $module_name;
 
-        $directory = __DIR__ . '/../../Controller/' . $module_name;
+        $directory = Filesystems::getPath(Filesystems::$controllersPath) . $module_name;
 
         $this->file_handler->if_exists_and_create($directory);
 
-        $module_file = fopen('Controller/' . $module_name . '/' . $module_name  . 'Module.php', 'w');
+        $module_file = fopen($directory . '\\' . $module_name  . 'Module.php', 'w');
 
         $module_content = '<?php
 
-namespace Controller\\' . $module_name . ';
+namespace App\Http\Controller\\' . $module_name . ';
 
 use Core\Interfaces\ICoreModule;
 
-class ' . $module_name . 'Module ' . ' implements ICoreModule
+class ' . $module_name . 'Module ' . 'implements ICoreModule
 {
     static public $controller = ' . $module_name . 'Controller::class;
-
-    static public function config()
-    {
-        return [];
-    }
-
-    static public function inject()
-    {
-        return [];
-    }
 
     static public function routes()
     {

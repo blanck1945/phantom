@@ -1,11 +1,11 @@
 <?php
 
-namespace Controller\Home;
+namespace App\Http\Controller\Home;
 
 class HomeController
 {
 
-    public function __construct() {}
+    public function __construct(private HomeService $homeService) {}
 
     public function home()
     {

@@ -1,12 +1,12 @@
 <?php
 
-namespace Controller\Home;
+namespace App\Http\Controller\Docs;
 
 use Core\Interfaces\ICoreModule;
 
-class HomeModule implements ICoreModule
+class DocsModule  implements ICoreModule
 {
-    static public $controller = HomeController::class;
+    static public $controller = DocsController::class;
 
     static public function config()
     {
@@ -20,10 +20,10 @@ class HomeModule implements ICoreModule
 
     static public function routes()
     {
-        return  [
-            '/' => [
-                'GET' => 'home'
-            ],
+        return [
+            '/docs' =>  [
+                'GET' => 'docs'
+            ]
         ];
     }
 }

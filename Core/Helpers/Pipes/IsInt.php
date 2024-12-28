@@ -7,7 +7,6 @@ use Core\Request\PhantomRequest;
 class IsInt
 {
 
-    public function __construct(private PhantomRequest $phantomRequest) {}
     public function handler(string $value, string $prop)
     {
         // Verificar si el valor no es un int

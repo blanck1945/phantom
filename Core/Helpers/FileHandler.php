@@ -6,7 +6,6 @@ class FileHandler
 {
     public function if_exists_and_create($directory)
     {
-        var_dump(!is_dir($directory));
         // Comprobar si el directorio ya existe
         if (!is_dir($directory)) {
             // Crear el directorio si no existe

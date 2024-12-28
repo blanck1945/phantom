@@ -51,7 +51,12 @@ class Dto
                 }
 
                 $exec = new $pipe_class($key, $this->$key);
-                $result = $exec->handler($this->$key, $key, $pipe[1] ?? []);
+
+                if (is_array($pipe[1])) {
+                    $result = $exec->handler($this->$key, $key, ...$pipe[1] ?? []);
+                } else {
+                    $result = $exec->handler($this->$key, $key);
+                }
 
                 if ($result) {
                     $errors[] = $result;

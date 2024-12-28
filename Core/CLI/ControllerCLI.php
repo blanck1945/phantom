@@ -2,6 +2,7 @@
 
 namespace Core\CLI;
 
+use config\Filesystems;
 use Core\Helpers\FileHandler;
 
 class ControllerCLI
@@ -12,16 +13,14 @@ class ControllerCLI
         echo 'CREATING CONTROLLER ' . $controller_name;
         ## create php file with controller name inside Controller folder
 
-        $directory = __DIR__ . '/../../Controller/' . $controller_name;
-
+        $directory = Filesystems::getPath(Filesystems::$controllersPath) . $controller_name;
         $this->file_handler->if_exists_and_create($directory);
 
-        $controller_file = fopen('Controller/' . $controller_name . '/' . $controller_name . 'Controller.php', 'w');
-
+        $controller_file = fopen($directory . '\\' . $controller_name . "Controller.php", 'w');
 
         $controller_content = '<?php
         
-namespace Controller\\' . $controller_name . ';
+namespace App\Http\Controller\\' . $controller_name . ';
 
 class ' . $controller_name . 'Controller
 {

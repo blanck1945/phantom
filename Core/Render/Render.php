@@ -14,9 +14,8 @@ class Render
     public function render_from_cache($view)
     {
         $coreCache = __DIR__ . '/../Cache/views/';
-        $filenameWithExtension = basename($view);
 
-        $completePath = $coreCache . $filenameWithExtension;
+        $completePath = $coreCache . $view;
 
         $cacheFileContent = file_get_contents($completePath);
 
@@ -52,7 +51,7 @@ class Render
 
             // write blade view to cache
 
-            if (Env::get('DEV_MODE') === 'development') {
+            if (Env::get('DEV_MODE') === 'false') {
                 file_put_contents($coreCache . $filename . '.blade.php', $bladeView);
             }
 

@@ -27,9 +27,9 @@ use Core\Interfaces\ICoreModule;
 
 class ' . $module_name . 'Module ' . 'implements ICoreModule
 {
-    static public $controller = ' . $module_name . 'Controller::class;
+    public CONST CONTROLLER = ' . $module_name . 'Controller::class;
 
-    static public function routes()
+    public static function routes()
     {
         return [];
     }

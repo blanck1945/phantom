@@ -2,35 +2,22 @@
 
 namespace Core\View;
 
+use config\Filesystems;
 use Core\Response\PhantomResponse;
+use Illuminate\Contracts\Filesystem\Filesystem;
 
 class View
 {
-
-    private string $view_path = '/pages/';
-
-    public function __construct(private string $base_url) {}
-    public function get_view_path()
-    {
-        return $this->view_path;
-    }
-
-    public function set_view_path(string $path)
-    {
-        $this->view_path = $path;
-    }
-
     public function get_view($view)
     {
         if (!$view) {
             return false;
         }
 
-        $view_path = $this->view_path . $view;
-        $path = $this->base_url . $view_path;
+        $view_path = Filesystems::VIEW_PATH . $view;
 
-        if (file_exists($path)) {
-            return $path;
+        if (file_exists($view_path)) {
+            return $view_path;
         } else {
             PhantomResponse::send404("View not found");
             return false;

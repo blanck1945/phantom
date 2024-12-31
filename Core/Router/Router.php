@@ -5,7 +5,9 @@ namespace Core\Router;
 use Core\Database\Database;
 use Core\Exception\ViewException;
 use Core\Helpers\PhantomValidator;
+use Core\Interfaces\ICoreController;
 use Core\Request\PhantomRequest;
+use Core\Response\PhantomResponse;
 use DI\Container;
 use Exception;
 
@@ -389,6 +391,41 @@ class Router
             : [];
     }
 
+    public function check_if_we_should_execute_route()
+    {
+        // read Cache/views 
+        $cacheViews = __DIR__ . '/Cache/views/';
+
+        if (!is_dir($cacheViews)) {
+            return;
+        }
+
+        $cacheViewsFiles = scandir($cacheViews);
+
+        $requestPath = $this->request->get_path();
+
+        foreach ($cacheViewsFiles as $file) {
+            if ($requestPath === '/' && $file === 'index.blade.php') {
+                $cacheFile = $cacheViews . $file;
+                $cacheFileContent = file_get_contents($cacheFile);
+
+                echo $cacheFileContent;
+                exit;
+            }
+
+            // remove first / from request path
+            $parsedRequestPath = ltrim($requestPath, '/');
+
+            if ($file === $parsedRequestPath . '.blade.php') {
+                $cacheFile = $cacheViews . $file;
+                $cacheFileContent = file_get_contents($cacheFile);
+
+                echo $cacheFileContent;
+                exit;
+            }
+        }
+    }
+
     public function set_queries($path, $matches)
     {
         // split array witn the caracter / and remove the first element
@@ -450,35 +487,22 @@ class Router
         $this->set_query_routes($query_routes);
     }
 
-    public function get_controller_instance(Container $container)
+    /**
+     * Summary of get_controller_instance
+     * 
+     * @param \DI\Container $container
+     * @return ICoreController
+     */
+    public function get_controller_instance(Container $container): ICoreController
     {
         if (empty($this->module_to_execute)) {
-            return $this->viewException->notFound();
+            PhantomResponse::send404();
+            exit;
         }
 
-        // $injectables = $this->module_to_execute::inject();
-        // $dependencies = [];
+        $controller_to_execute = $this->module_to_execute::CONTROLLER;
 
-        // try {
-        //     foreach ($injectables as $key => $injectable) {
-        //         $dependencies[] = $container->get($injectable);
-        //     }
-        // } catch (Exception $e) {
-        //     echo $e->getMessage();
-        // }
-
-        $controller_to_execute = $this->module_to_execute::$controller;
-
-        // ## check if database is in injectables
-        // $array_ = array_values($injectables);
-        // if (in_array('myDb', $array_)) {
-        //     $injectableKey = array_search('myDb', $injectables);
-        //     $injectables[$injectableKey] = $this->database;
-        // }
-
-        ## Construct Controller class
         return $container->get($controller_to_execute);
-        // return new $controller_to_execute(...$dependencies);
     }
 
     public function get_controller_config()

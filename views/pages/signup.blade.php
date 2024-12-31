@@ -1,17 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Registrarse</title>
-</head>
-<body class="w-full bg-slate-700">
+@extends('template.metada')
+
+<body class="w-full bg-slate-500">
 
     <div>
 
     </div>
-    <form class="rounded bg-white" method="POST" action="/signup">
+    <form class="rounded bg-white flex flex-col gap-4" method="POST" action="/signup">
     <h2>Crea tu tienda gratis</h2>
 
     <div>
@@ -29,11 +23,13 @@
         <input type="text" name="mise_price" id="mise_price">
     </div>
 
-    <div>
-        <select name="mise_category" id="mise_category">
+    <div class="flex flex-col">
+        <label class="font-bold" for="mise_category">Categoria de tu negocio</label>
+        <select class="border rounded" name="mise_category" id="mise_category">
             @foreach($page_data["categories"] as $category)
                 <option value="{{ $category->id }}">{{ $category->value }}</option>
             @endforeach
+        </select>
     </div>
 
     <div>
@@ -41,10 +37,11 @@
         <input type="text" name="mise_phone" id="mise_phone">
     </div>
 
-    <div>
+    <div class="bg-slate-500">
+        <label class="" for="mise_country">Pais de tu negocio</label>
         <select name="mise_country" id="mise_country">
             <option value="ARG">Argentina</option>
-            <option value="CHI">Chile</option>
+            <option value="CHL">Chile</option>
         </select>
     </div>
 

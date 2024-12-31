@@ -22,7 +22,9 @@ class ControllerCLI
         
 namespace App\Http\Controller\\' . $controller_name . ';
 
-class ' . $controller_name . 'Controller
+use Core\Interfaces\ICoreController;
+
+class ' . $controller_name . 'Controller implementation ICoreController
 {
 }
         ';

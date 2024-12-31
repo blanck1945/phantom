@@ -12,7 +12,8 @@
   "require": {
     "vlucas/phpdotenv": "^5.5",
     "eftec/bladeone": "^4.13",
-    "php-di/php-di": "^7.0"
+    "php-di/php-di": "^7.0",
+    "illuminate/database": "^10.48"
   },
   "autoload": {
     "psr-4": {

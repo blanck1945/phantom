@@ -2,18 +2,21 @@
 
 namespace App\Http\Controller\Home;
 
-use Core\Helpers\Traits\CoreModuleTrait;
+use Core\Interfaces\ICoreModule;
+use Core\Helpers\Enums\RenderMethod;
 
-class HomeModule
+class HomeModule implements ICoreModule
 {
-    use CoreModuleTrait;
-    static public $controller = HomeController::class;
+    public const CONTROLLER = HomeController::class;
 
     static public function routes()
     {
         return  [
             '/' => [
-                'GET' => 'home'
+                'GET' => [
+                    'controller' => 'index',
+                    'render' => RenderMethod::STATIC
+                ]
             ],
         ];
     }

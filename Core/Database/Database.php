@@ -2,10 +2,10 @@
 
 namespace Core\Database;
 
-use Core\Autoload\AutoLoad;
-use Core\Env\Env;
+use config\DatabaseConfig;
 use Exception;
 use PDO;
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 class Database
 {
@@ -16,52 +16,16 @@ class Database
      * this array will be an instance of a specific Singleton's subclass. You'll
      * see how this works in a moment.
      */
-    private static $instances = [];
     private static Database|null $instance = null;
 
     private static PDO $db;
-
-    private string $db_host;
-    private string $db_name;
-
-    private string $db_user;
-    private string $db_password;
-    private string $db_port;
-
-    //     public function __construct(private string $db_type)
-    //     {
-    //         AutoLoad::loadAutoload();
-    //         $this->db_type = $db_type;
-    //         $this->db_host = $_ENV['DB_HOST'];
-    //         $this->db_port = $_ENV['DB_PORT'];
-    //         $this->db_name = $_ENV['DB_NAME'];
-    //         $this->db_user = $_ENV['DB_USER'];
-    //         $this->db_password = $_ENV['DB_PASSWORD'];
-    //     }
+    private Capsule $capsule;
 
     /**
      * The Singleton's constructor should always be private to prevent direct
      * construction calls with the `new` operator.
      */
-    private function __construct(private DatabaseHelpers $databaseHelpers)
-    {
-        $this->db_host = Env::get('DB_HOST');
-        $this->db_port =  Env::get('DB_PORT');
-        $this->db_name = Env::get('DB_NAME');
-        $this->db_user = Env::get('DB_USER');
-        $this->db_password = Env::get('DB_PASSWORD');
-    }
-
-    public function connect_db()
-    {
-        $connection_string = "host=$this->db_host port=$this->db_port dbname=$this->db_name user=$this->db_user password=$this->db_password";
-
-        // try {
-        //     return pg_connect($connection_string);
-        // } catch (\Exception $e) {
-        //     echo $e->getMessage();
-        // }
-    }
+    private function __construct(private DatabaseActions $databaseActions) {}
 
     /**
      * Singletons should not be cloneable.
@@ -88,163 +52,60 @@ class Database
     public static function getInstance(): Database
     {
         if (!isset(self::$instance)) {
-            self::$instance = new static(new DatabaseHelpers());
+            self::$instance = new static(new DatabaseActions(new DatabaseHelpers()));
         }
 
         return self::$instance;
     }
-    // if (!isset(self::$db)) {
-    //     return self::connect();
-    // } else {
-    //     return self::$db;
-    // }
 
-    public static function connect(string $DB_USER, string $DB_PASSWORD, string $CONNECTION_STRING): void
+    public function testConnection(): bool
     {
-        // $db_user = $_ENV['DB_USER'];
-        // $db_password = $_ENV['DB_PASSWORD'];
-        // $connection_string = $_ENV['DB_CONNECTION_STRING'];
-
-        // $connection_string = "host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_password";
-
-
         try {
-            // $db = new PDO('pgsql:host=postgres;port=5432;dbname=kanas', $DB_USER, $DB_PASSWORD);
-            // Establecer la conexión
-            $db = new PDO("pgsql:host=postgres;port=5432;dbname=kanas;", "admin", "1234567", [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-            ]);
-
-            self::$db = $db;
-        } catch (Exception $e) {
-            echo $e->getMessage();
+            // Ejecutar una consulta básica para verificar la conexión
+            Capsule::connection()->getPdo();
+            return true; // Conexión exitosa
+        } catch (\PDOException $e) {
+            // Manejar el error si no se puede conectar
+            echo "Error de conexión: " . $e->getMessage();
+            return false;
         }
     }
 
-    public function testConnection(): void
+    /**
+     * Initialize the database connection - Singleton
+     * 
+     * @param string $driver 'pgsql' | 'mysql' | 'sqlite'
+     * @return void
+     */
+    public function initDb(string $driver = 'pgsql')
     {
-        var_dump(self::$db->getAttribute(PDO::ATTR_CONNECTION_STATUS));
+        try {
+            if (!isset(self::$instance)) {
+                self::$instance = new static(new DatabaseActions(new DatabaseHelpers()));
+            }
+
+            // Instancia de Eloquent Capsule
+            $capsule = new Capsule();
+
+            // Agregar conexión
+            $capsule->addConnection(DatabaseConfig::getDatabaseConfig()[$driver]);
+
+            // Iniciar Eloquent
+            $capsule->setAsGlobal();
+            $capsule->bootEloquent();
+            $this->capsule = $capsule;
+        } catch (Exception $e) {
+            echo "Error al conectar a la base de datos: " . $e->getMessage();
+        }
     }
-
-    public function insert() {}
-
-    //     private string $db_host;
-    //     private string $db_name;
-
-    //     private string $db_user;
-    //     private string $db_password;
-    //     private string $db_port;
-
-    //     public function __construct(private string $db_type)
-    //     {
-    //         AutoLoad::loadAutoload();
-    //         $this->db_type = $db_type;
-    //         $this->db_host = $_ENV['DB_HOST'];
-    //         $this->db_port = $_ENV['DB_PORT'];
-    //         $this->db_name = $_ENV['DB_NAME'];
-    //         $this->db_user = $_ENV['DB_USER'];
-    //         $this->db_password = $_ENV['DB_PASSWORD'];
-    //     }
-
-    //     public function connect_db()
-    //     {
-    //         $connection_string = "host=$this->db_host port=$this->db_port dbname=$this->db_name user=$this->db_user password=$this->db_password";
-
-    //         try {
-    //             return pg_connect($connection_string);
-    //         } catch (\Exception $e) {
-    //             echo $e->getMessage();
-    //         }
-    //     }
-
-    //     public function execute_query($query)
-    //     {
-    //         $connection = $this->connect_db();
-
-    //         try {
-    //             $result = pg_query($connection, $query);
-
-    //             return $result;
-    //         } catch (\Exception $e) {
-    //             echo $e->getMessage();
-    //         }
-    //     }
-
-    //     /**
-    //      * @param string $tableName
-    //      * @param array $columns
-    //      * @param array $values
-    //      * @return mixed
-    //      */
-    //     function insert($tableName, $columns, $values)
-    //     {
-    //         $query = "INSERT INTO $tableName $columns VALUES $values";
-    //     }
-
-    //     public function create($table, $data)
-    //     {
-
-
-    //         $connection = $this->connect_db();
-
-    //         try {
-    //             $sql_query = "INSERT INTO $table (
-    //                 name,
-    //                 description,
-    //                 price,
-    //                 quantity
-    //             ) VALUES (
-    //                 '$data->',
-    //                 '$data->description',
-    //                 $data->price,
-    //                 $data->quantity
-    //             )";
-    //             $result = pg_query($connection, $sql_query);
-
-    //             return $result;
-    //         } catch (\Exception $e) {
-    //             echo $e->getMessage();
-    //         }
-    //     }
-    // }
 
     public function findAll(string $table)
     {
-        try {
-
-            $query = "SELECT * FROM $table";
-            $stmt = self::$db->prepare($query);
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {
-            echo $e->getMessage();
-            return [];
-        }
+        return $this->databaseActions->findAll(self::$db, $table);
     }
 
     public function findOne(string $table, array $where, string|array $columns = ' * ')
     {
-        $query = $this->databaseHelpers->handle_select_query($table, $columns);
-
-        $query = $this->databaseHelpers->handle_query_params($query, $where);
-
-        return $this->execute_query($query, $where);
-    }
-
-    public function execute_query($query, $where)
-    {
-        try {
-            $stmt = self::$db->prepare($query);
-            foreach ($where as $column => $value) {
-                $paramType = $this->databaseHelpers->get_PDO_param_type($value);
-                $stmt->bindValue(":$column", $value, $paramType);
-            }
-            $stmt->execute();
-            return $stmt->fetch();
-        } catch (Exception $e) {
-            echo $e->getMessage();
-            return [];
-        }
+        return $this->databaseActions->findOne(self::$db, $table, $where, $columns);
     }
 }

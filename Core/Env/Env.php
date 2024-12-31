@@ -2,6 +2,7 @@
 
 namespace Core\Env;
 
+use config\Filesystems;
 use Dotenv\Dotenv;
 use Exception;
 
@@ -33,9 +34,15 @@ class Env
         $_ENV = [];
     }
 
-    public static function load($path)
+    /**
+     * Load environment variables 
+     * 
+     * @return void
+     * 
+     */
+    public static function loadEnv()
     {
-        $dotenv = Dotenv::createImmutable($path);
+        $dotenv = Dotenv::createImmutable(dirname(Filesystems::$envPath));
         $dotenv->load();
     }
 

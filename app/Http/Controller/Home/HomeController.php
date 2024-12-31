@@ -2,12 +2,14 @@
 
 namespace App\Http\Controller\Home;
 
-class HomeController
+use Core\Interfaces\ICoreController;
+
+class HomeController implements ICoreController
 {
 
     public function __construct(private HomeService $homeService) {}
 
-    public function home()
+    public function index()
     {
         return [
             'view' => 'index.blade.php',

@@ -2,7 +2,7 @@
 
 namespace Core;
 
-use config\Filesystems;
+use Core\Cache\PhantomCache;
 use Core\Cors\Cors;
 use Core\Database\Database;
 use Core\Env\Env;
@@ -14,16 +14,13 @@ use Core\Router\Router;
 use Core\Server\Server;
 use Core\View\View;
 use DI\Container;
-use Dotenv\Dotenv;
 
 class Phantom
 {
-    private static string $ROOT_DIR;
     public $request;
     public $router;
     public $middlewares;
     public $metadata;
-    public $configuration;
     public $guards;
     public $interceptors;
     public $method;
@@ -34,31 +31,33 @@ class Phantom
     private $render_handler;
     private $view_handler;
     private $metadata_handler;
+    private PhantomCache $cache_handler;
     private $database;
     private $container;
 
-    private $databaseReferenceName = 'database';
-
     public function __construct(private array $config = [])
     {
-        self::$ROOT_DIR = dirname(__DIR__);
+        Env::loadEnv();
+        $this->container = new Container(ContainerConfig::get_config());
         $this->request = new PhantomRequest();
-        $this->database = null;
+        $this->database = Database::getInstance();
         $this->router_handler = new Router($this->request, $this->database);
         $this->cors_handler = new Cors();
         $this->server_handler = new Server($config['metadata'] ?? [], $this->request, $this->router_handler);
-        $this->view_handler = new View(self::$ROOT_DIR . "/views");
+        $this->view_handler = new View();
         $this->render_handler = new Render($this->view_handler);
         $this->metadata_handler = new Metadata($config['metadata'] ?? []);
-        $this->configuration = $config['configuration'] ?? [];
-        $this->container = new Container(ContainerConfig::get_config());
+        $this->cache_handler = new PhantomCache();
     }
+
 
     public function boostrap()
     {
-        $this->read_cache_file($this->request->get_path());
+        $this->cache_handler->read_cache_file($this->request->get_path(), $this->render_handler);
 
-        $this->check_if_we_should_execute_route();
+        $this->router_handler->check_if_we_should_execute_route();
+
+        $this->show_404_if_empty();
 
         $this->router_handler->execute_global_middlewares();
 
@@ -103,10 +102,9 @@ class Phantom
                 'favicon' => ''
             ];
         }
-        $DEV_MODE = Env::get('DEV_MODE');
 
-        if ($DEV_MODE === 'false') {
-            $this->write_cache_file($this->request->get_path(), $executable['view'] ?? null);
+        if (Env::get('DEV_MODE') === 'false') {
+            $this->cache_handler->write_cache_file($this->request->get_path(), $executable['view'] ?? null);
         }
 
         $view = $this->view_handler->get_view($executable['view'] ?? null);
@@ -114,52 +112,8 @@ class Phantom
         $this->render_handler->render($executable, $route_config, $view);
     }
 
-    /**
-     * Load environment variables 
-     * 
-     * @return void
-     * 
-     */
-    public function loadEnv()
+    public function show_404_if_empty()
     {
-        $dotenv = Dotenv::createImmutable(dirname(Filesystems::$envPath));
-        $dotenv->load();
-    }
-
-    public function check_if_we_should_execute_route()
-    {
-        // read Cache/views 
-        $cacheViews = __DIR__ . '/Cache/views/';
-
-        if (!is_dir($cacheViews)) {
-            return;
-        }
-
-        $cacheViewsFiles = scandir($cacheViews);
-
-        $requestPath = $this->request->get_path();
-
-        foreach ($cacheViewsFiles as $file) {
-            if ($requestPath === '/' && $file === 'index.blade.php') {
-                $cacheFile = $cacheViews . $file;
-                $cacheFileContent = file_get_contents($cacheFile);
-
-                echo $cacheFileContent;
-                exit;
-            }
-
-            // remove first / from request path
-            $parsedRequestPath = ltrim($requestPath, '/');
-
-            if ($file === $parsedRequestPath . '.blade.php') {
-                $cacheFile = $cacheViews . $file;
-                $cacheFileContent = file_get_contents($cacheFile);
-
-                echo $cacheFileContent;
-                exit;
-            }
-        }
-
         if (empty($this->router_handler->get_module_to_execute())) {
             $route_config = $this->router_handler->get_controller_config();
 
@@ -169,74 +123,6 @@ class Phantom
             exit;
         }
     }
-
-    public function read_cache_file($path)
-    {
-        // Ruta del archivo JSON
-        $jsonFile = __DIR__ . '/Cache/views/directory.json';
-
-        // Si el archivo existe, leer el contenido
-        if (file_exists($jsonFile)) {
-            $jsonContent = file_get_contents($jsonFile);
-            $defaultData = json_decode($jsonContent, true) ?? [];
-
-            if (isset($defaultData[$path])) {
-                $viewDir = __DIR__ . '/../views/pages/';
-                $view = $viewDir . $defaultData[$path];
-
-                $this->render_handler->render_from_cache($view);
-                echo "render from cache";
-                exit;
-            }
-        }
-    }
-
-    public function write_cache_file(string $path, $view)
-    {
-        echo "write_cache_file";
-        // Ruta del archivo JSON
-        $jsonFile = __DIR__ . '/Cache/views/directory.json';
-
-        // Verificar si el directorio existe, si no, crearlo
-        $directory = __DIR__ . '/Cache/views';
-        if (!is_dir($directory)) {
-            if (!mkdir($directory, 0777, true) && !is_dir($directory)) {
-                die("Error: No se pudo crear el directorio.");
-            }
-        }
-
-        // Si el archivo existe, leer el contenido
-        if (file_exists($jsonFile)) {
-            $jsonContent = file_get_contents($jsonFile);
-            $defaultData = json_decode($jsonContent, true) ?? [];
-        }
-        // Agregar el nuevo dato
-        $defaultData[$path] = $view;
-
-        // Guardar el JSON actualizado
-        $jsonView = json_encode($defaultData, JSON_PRETTY_PRINT);
-        file_put_contents($jsonFile, $jsonView);
-
-        // crear el archivo JSON
-        // $cache = __DIR__ . '/Cache/views/';
-        // $cacheFile = $cache . $path . '.blade.php';
-
-        // if (!file_exists($cacheFile)) {
-        //     file_put_contents($cacheFile, $view);
-        // }
-    }
-
-    public function set_configuration($error_page = [], $port = 3000)
-    {
-        $this->configuration['404'] = $error_page;
-        $this->configuration['port'] = $port;
-
-
-        // if (!is_null($database)) {
-        //     $this->configuration['database'] = new Database($database['driver']);
-        // }
-    }
-
 
     /**
      * Root method to register routes 
@@ -262,7 +148,12 @@ class Phantom
         $this->router_handler->register_routes($routes);
     }
 
-    public function set_cors()
+    /**
+     * Enable CORS
+     * 
+     * @return void
+     */
+    public function set_cors(): void
     {
         $this->cors_handler->enable_cors();
     }
@@ -291,29 +182,9 @@ class Phantom
         $this->interceptors = $interceptors;
     }
 
-
-    public function get_root_path()
+    public function setDb(string $driver = 'pgsql')
     {
-        return self::$ROOT_DIR;
-    }
-
-    public function get_view_path()
-    {
-        return self::$ROOT_DIR . "/views";
-    }
-
-    public function setDb(string $connectionString, string $user, string $password, string $databaseReference = 'database')
-    {
-        $instance = Database::getInstance();
-
-        $instance->connect(
-            $user,
-            $password,
-            $connectionString,
-        );
-
-
-        $this->databaseReferenceName = $databaseReference;
+        $this->database->initDb($driver);
     }
 
     public function testDbConnection()

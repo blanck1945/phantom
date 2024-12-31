@@ -2,6 +2,7 @@
 
 namespace Core\Database;
 
+use Exception;
 use PDO;
 
 class DatabaseHelpers
@@ -48,6 +49,22 @@ class DatabaseHelpers
             return PDO::PARAM_INT;
         } else {
             return PDO::PARAM_STR; // Por defecto, se considera string
+        }
+    }
+
+    public function execute_query($db, $query, $where)
+    {
+        try {
+            $stmt = $db->prepare($query);
+            foreach ($where as $column => $value) {
+                $paramType = $this->get_PDO_param_type($value);
+                $stmt->bindValue(":$column", $value, $paramType);
+            }
+            $stmt->execute();
+            return $stmt->fetch();
+        } catch (Exception $e) {
+            echo $e->getMessage();
+            return [];
         }
     }
 }

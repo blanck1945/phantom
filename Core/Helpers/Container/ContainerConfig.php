@@ -2,6 +2,8 @@
 
 namespace Core\Helpers\Container;
 
+use Core\Database\Database;
+
 class ContainerConfig
 {
     /**
@@ -9,17 +11,12 @@ class ContainerConfig
      * 
      * Add your class name and factory function here
      * 
-     * @var array
-     */
-    private static array $config = [];
-
-    /**
-     * Get the container configuration
-     * 
      * @return array
      */
     public static function get_config(): array
     {
-        return self::$config;
+        return [
+            'Core\Database\Database' => fn() => Database::getInstance()
+        ];
     }
 }

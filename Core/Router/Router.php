@@ -391,7 +391,7 @@ class Router
             : [];
     }
 
-    public function check_if_we_should_execute_route()
+    public function check_if_we_should_execute_route($start)
     {
         // read Cache/views 
         $cacheViews = __DIR__ . '/Cache/views/';
@@ -410,7 +410,6 @@ class Router
                 $cacheFileContent = file_get_contents($cacheFile);
 
                 echo $cacheFileContent;
-                exit;
             }
 
             // remove first / from request path
@@ -421,9 +420,10 @@ class Router
                 $cacheFileContent = file_get_contents($cacheFile);
 
                 echo $cacheFileContent;
-                exit;
             }
         }
+
+        exit;
     }
 
     public function set_queries($path, $matches)
@@ -440,9 +440,10 @@ class Router
         } else {
             for ($i = 0; $i < count($split_path); $i++) {
                 $key = explode(':', $split_path[$i]);
-                $queries[$key[1]] = $matches[$i];
+                if (count($key) > 1) {
+                    $queries[$key[1]] = $matches[$i];
+                };
             }
-            array_shift($queries);
         }
 
         $this->route_quries = $queries;

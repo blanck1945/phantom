@@ -2,7 +2,6 @@
 
 namespace Core\CLI;
 
-use config\Filesystems;
 use Core\Helpers\FileHandler;
 
 class ModuleCLI
@@ -13,7 +12,7 @@ class ModuleCLI
     {
         echo 'CREATING MODULE ' . $module_name;
 
-        $directory = Filesystems::getPath(Filesystems::$controllersPath) . $module_name;
+        $directory = CONTROLLERS_PATH . $module_name;
 
         $this->file_handler->if_exists_and_create($directory);
 

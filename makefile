@@ -4,6 +4,9 @@ install:
 up:
 	cd .\docker\ && docker-compose up -d --build
 
+build:
+	docker-compose -d build --no-cache
+
 down:
 	cd .\docker\ && docker-compose down
 

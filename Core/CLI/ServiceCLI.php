@@ -2,7 +2,6 @@
 
 namespace Core\CLI;
 
-use config\Filesystems;
 use Core\Helpers\FileHandler;
 
 class ServiceCLI
@@ -13,7 +12,7 @@ class ServiceCLI
     {
         echo 'CREATING SERVICE ' . $service_name;
 
-        $directory = Filesystems::getPath(Filesystems::$controllersPath) . $service_name;
+        $directory = __DIR__ . '\\..\\..\\app\\Http\\Controller\\'  . $service_name;
 
         $this->file_handler->if_exists_and_create($directory);
 

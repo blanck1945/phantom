@@ -13,7 +13,8 @@ class ControllerCLI
         echo 'CREATING CONTROLLER ' . $controller_name;
         ## create php file with controller name inside Controller folder
 
-        $directory = Filesystems::getPath(Filesystems::$controllersPath) . $controller_name;
+        $directory = __DIR__ . '\\..\\..\\app\\Http\\Controller\\' . $controller_name;
+
         $this->file_handler->if_exists_and_create($directory);
 
         $controller_file = fopen($directory . '\\' . $controller_name . "Controller.php", 'w');
@@ -24,7 +25,7 @@ namespace App\Http\Controller\\' . $controller_name . ';
 
 use Core\Interfaces\ICoreController;
 
-class ' . $controller_name . 'Controller implementation ICoreController
+class ' . $controller_name . 'Controller implements ICoreController
 {
 }
         ';

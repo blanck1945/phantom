@@ -1,10 +1,10 @@
 <?php
 
-namespace Core\Helpers\Container;
+namespace config;
 
 use Core\Database\Database;
 
-class ContainerConfig
+class BindingsConfig
 {
     /**
      * Dependency injection container definitions - key is the class name and value is the factory function

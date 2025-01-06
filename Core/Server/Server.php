@@ -14,8 +14,8 @@ class Server
     {
         // $hasDto = $this->router_handler->getDto();
 
-        if ($this->router_handler->get_queries()) {
-            foreach ($this->router_handler->get_queries() as $key => $value) {
+        if ($queries) {
+            foreach ($queries as $key => $value) {
                 $this->request_handler->setParam($key, $value);
             }
         }

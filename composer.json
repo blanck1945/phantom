@@ -24,7 +24,8 @@
       "src\\": "src/",
       "app\\": "app/",
       "boostrap\\": "boostrap/",
-      "config\\": "config/"
+      "config\\": "config/",
+      "database\\": "database/"
     }
   },
   "require-dev": {

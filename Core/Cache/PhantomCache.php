@@ -2,15 +2,14 @@
 
 namespace Core\Cache;
 
-use config\Filesystems;
 use Core\Render\Render;
 
 class PhantomCache
 {
-    public function read_cache_file(string $path, Render $render_handler)
+    public function read_cache_file(string $path, Render $render_handler,)
     {
         // Ruta del archivo JSON
-        $jsonFile = Filesystems::JSON_CACHE_FILE;
+        $jsonFile = JSON_CACHE_FILE;
 
         // Si el archivo existe, leer el contenido
         if (file_exists($jsonFile)) {
@@ -28,10 +27,10 @@ class PhantomCache
     public function write_cache_file(string $path, $view)
     {
         // Ruta del archivo JSON
-        $jsonFile = Filesystems::JSON_CACHE_FILE;
+        $jsonFile = JSON_CACHE_FILE;
 
         // Verificar si el directorio existe, si no, crearlo
-        $directory = Filesystems::CACHE_DIR;
+        $directory = CACHE_DIR;
         if (!is_dir($directory)) {
             if (!mkdir($directory, 0777, true) && !is_dir($directory)) {
                 die("Error: No se pudo crear el directorio.");

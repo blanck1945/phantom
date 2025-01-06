@@ -14,7 +14,7 @@ class View
             return false;
         }
 
-        $view_path = Filesystems::VIEW_PATH . $view;
+        $view_path = VIEW_PATH . $view;
 
         if (file_exists($view_path)) {
             return $view_path;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controller\Docs;
+namespace App\Http\Controllers\Docs;
 
 use Core\Interfaces\ICoreModule;
 

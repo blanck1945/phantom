@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controller\Home;
+namespace App\Http\Controllers\Home;
 
 use Core\Interfaces\ICoreModule;
 use Core\Helpers\Enums\RenderMethod;

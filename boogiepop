@@ -3,6 +3,10 @@
 
 require_once 'vendor/autoload.php';
 
+require_once 'config/globalDefinitions.php';
+
+require_once 'Core/Env/loadEnv.php';
+
 use Core\CLI\Boogie;
 
 class PhantomCLI
@@ -19,6 +23,12 @@ class PhantomCLI
             'create:module' => $boogie->create_module($argv[2]),
             'create:controller' => $boogie->create_controller($argv[2]),
             'create:service' => $boogie->create_service($argv[2]),
+            'create:model' => $boogie->create_model($argv[2]),
+            'init:migrations' => $boogie->init_migrations(),
+            'dop:all' => $boogie->drop_all(),
+            'drop:migration' => $boogie->drop_migration($argv[2]),
+            'run:migrations' => $boogie->run_migrations(),
+            'run:migration' => $boogie->run_single_migration($argv[2]),
             default => var_dump("No command found - " . $command),
         };
     }

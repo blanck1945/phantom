@@ -42,7 +42,7 @@ class Env
      */
     public static function loadEnv()
     {
-        $dotenv = Dotenv::createImmutable(dirname(Filesystems::$envPath));
+        $dotenv = Dotenv::createImmutable(dirname(ENV_PATH));
         $dotenv->load();
     }
 

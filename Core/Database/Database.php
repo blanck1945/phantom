@@ -25,7 +25,7 @@ class Database
      * The Singleton's constructor should always be private to prevent direct
      * construction calls with the `new` operator.
      */
-    private function __construct(private DatabaseActions $databaseActions) {}
+    public function __construct(private DatabaseActions $databaseActions) {}
 
     /**
      * Singletons should not be cloneable.
@@ -59,6 +59,19 @@ class Database
     }
 
     public function testConnection(): bool
+    {
+        try {
+            // Ejecutar una consulta básica para verificar la conexión
+            Capsule::connection()->getPdo();
+            return true; // Conexión exitosa
+        } catch (\PDOException $e) {
+            // Manejar el error si no se puede conectar
+            echo "Error de conexión: " . $e->getMessage();
+            return false;
+        }
+    }
+
+    public function testCapsule(): bool
     {
         try {
             // Ejecutar una consulta básica para verificar la conexión

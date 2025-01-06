@@ -2,11 +2,11 @@
 
 namespace Core;
 
+use config\BindingsConfig;
 use Core\Cache\PhantomCache;
 use Core\Cors\Cors;
 use Core\Database\Database;
 use Core\Env\Env;
-use Core\Helpers\Container\ContainerConfig;
 use Core\Metadata\Metadata;
 use Core\Render\Render;
 use Core\Request\PhantomRequest;
@@ -37,8 +37,7 @@ class Phantom
 
     public function __construct(private array $config = [])
     {
-        Env::loadEnv();
-        $this->container = new Container(ContainerConfig::get_config());
+        $this->container = new Container(BindingsConfig::get_config());
         $this->request = new PhantomRequest();
         $this->database = Database::getInstance();
         $this->router_handler = new Router($this->request, $this->database);
@@ -55,7 +54,7 @@ class Phantom
     {
         $this->cache_handler->read_cache_file($this->request->get_path(), $this->render_handler);
 
-        $this->router_handler->check_if_we_should_execute_route();
+        //$this->router_handler->check_if_we_should_execute_route($start);
 
         $this->show_404_if_empty();
 
@@ -103,7 +102,7 @@ class Phantom
             ];
         }
 
-        if (Env::get('DEV_MODE') === 'false') {
+        if (Env::get('DEV_MODE') === 'false' && array_key_exists('view', $executable)) {
             $this->cache_handler->write_cache_file($this->request->get_path(), $executable['view'] ?? null);
         }
 

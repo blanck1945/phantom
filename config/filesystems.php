@@ -18,7 +18,6 @@ class Filesystems
 
     public static function getPath(string $path): string
     {
-        var_dump(self::PROJECT_ROOT . $path);
         return self::PROJECT_ROOT . $path . '\\';
     }
 }

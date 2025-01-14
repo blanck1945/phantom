@@ -51,9 +51,29 @@ class Boogie
         $this->migrationsCLI->init_migrations();
     }
 
+    /**
+     * Run all migrations - default dir is database/migrations
+     * 
+     * @return void
+     */
+    public function run_all()
+    {
+        $this->migrationsCLI->run_all_migrations();
+    }
+
     public function run_single_migration($arg)
     {
         $this->migrationsCLI->run_single_migration($arg);
+    }
+
+    /**
+     * Drop all migrations - default dir is database/migrations 
+     * 
+     * @return void
+     */
+    public function drop_all()
+    {
+        $this->migrationsCLI->drop_all_migrations();
     }
 
     public function drop_migration($arg)

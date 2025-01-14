@@ -66,7 +66,7 @@ define('ENV_PATH', PROJECT_ROOT);
 |
 */
 
-define('CONTROLLERS_PATH',  PROJECT_ROOT . '/app/Http/Controller/');
+define('CONTROLLERS_PATH',  PROJECT_ROOT . '/app/Http/Controllers/');
 
 /*
 |--------------------------------------------------------------------------
@@ -78,3 +78,13 @@ define('CONTROLLERS_PATH',  PROJECT_ROOT . '/app/Http/Controller/');
 */
 
 define('MIGRATIONS_PATH',  PROJECT_ROOT . '/database/migrations/');
+
+/*
+|--------------------------------------------------------------------------
+| Jwt Auth name
+|--------------------------------------------------------------------------
+|
+| This constant is the name of the jwt auth cookie
+|
+*/
+define('JWT_AUTH_NAME', 'auth_token');

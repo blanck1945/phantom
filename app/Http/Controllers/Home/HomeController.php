@@ -3,18 +3,15 @@
 namespace App\Http\Controllers\Home;
 
 use Core\Interfaces\ICoreController;
+use Core\Request\PhantomRequest;
 
 class HomeController implements ICoreController
 {
 
     public function __construct(private HomeService $homeService) {}
 
-    public function index()
+    public function index(PhantomRequest $phantomRequest): array
     {
-        return [
-            'view' => 'index.blade.php',
-            'hello' => 'Hello World',
-            'framework' => 'Phantom'
-        ];
+        return $this->homeService->index($phantomRequest->getUser());
     }
 }

@@ -9,23 +9,63 @@ use Core\Ui\Forms\FormBuilder;
 class FormService
 {
 
-    public function __construct(private FormBuilder $formBuilder) {}
+    public function __construct(public readonly FormBuilder $formBuilder) {}
 
-    public function login(string $username, string $password)
-    {
+    public function signup(
+        string $name = '',
+        string $email = '',
+        string $password = '',
+        string $confirmPassword = '',
+        array $errors = []
+    ) {
         return $this->formBuilder->build([
             [
                 'type' => Input::class,
-                'name' => 'username',
-                'label' => 'Nombre del usuario',
-                'placeholder' => 'Ingrese su nombre de usuario',
-                'value' => $username
+                'name' => 'name',
+                'placeholder' => 'Nombre',
+                'value' => $name,
+                'error' => $errors['name'] ?? ''
+            ],
+            [
+                'type' => Input::class,
+                'name' => 'email',
+                'placeholder' => 'Email',
+                'value' => $email,
+                'error' => $errors['email'] ?? ''
             ],
             [
                 'type' => Password::class,
                 'name' => 'password',
-                'label' => 'Contraseña del usuario',
-                'value' => $password
+                'placeholder' => 'Contraseña',
+                'value' => $password,
+                'error' => $errors['password'] ?? ''
+            ],
+            [
+                'type' => Password::class,
+                'name' => 'confirmPassword',
+                'placeholder' => 'Confirmar contraseña',
+                'value' => $confirmPassword,
+                'error' => $errors['confirmPassword'] ?? ''
+            ],
+        ]);
+    }
+
+    public function login(string $username = '', string $password = '', array $errors = [])
+    {
+        return $this->formBuilder->build([
+            [
+                'type' => Input::class,
+                'name' => 'email',
+                'placeholder' => 'Email',
+                'value' => $username,
+                'error' => $errors['email'] ?? ''
+            ],
+            [
+                'type' => Password::class,
+                'name' => 'password',
+                'placeholder' => 'Contraseña',
+                'value' => $password,
+                'error' => $errors['password'] ?? ''
             ],
         ]);
     }

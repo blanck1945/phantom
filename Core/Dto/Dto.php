@@ -23,12 +23,15 @@ class Dto
      * 
      * @var bool
      */
-    private bool $extrict_validation = true;
+    private bool $extrict_validation;
+
+    private string $_token;
 
 
-    public function __construct(private array $route_validations)
+    public function __construct(private array $route_validations, private bool $child_extrict_validation = true)
     {
         $this->validations = $route_validations;
+        $this->extrict_validation = $child_extrict_validation;
     }
 
     /**
@@ -59,7 +62,7 @@ class Dto
                 }
 
                 if ($result) {
-                    $errors[] = $result;
+                    $errors[$key] = $result[$key];
                 }
             }
         }

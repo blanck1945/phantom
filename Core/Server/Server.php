@@ -8,7 +8,11 @@ use Core\Router\Router;
 class Server
 {
 
-    public function __construct(private array $config, private PhantomRequest $request_handler, private Router $router_handler) {}
+    public function __construct(
+        private array $config,
+        private PhantomRequest $request_handler,
+        private Router $router_handler
+    ) {}
 
     public function execute_handler($instance, $queries)
     {
@@ -21,6 +25,8 @@ class Server
         }
 
         $executable = $instance->{$this->router_handler->get_handler()}($this->request_handler);
+
+        $executable['_token'] = $this->router_handler->get_phantom_handler()->get_csrf();
 
         return $executable;
     }
@@ -66,6 +72,10 @@ class Server
     {
         if (!array_key_exists('view', $executable)) {
             header('Content-Type: application/json');
+        }
+
+        if (array_key_exists('statusCode', $executable)) {
+            http_response_code($executable['statusCode']);
         }
     }
 }

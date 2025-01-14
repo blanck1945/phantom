@@ -2,11 +2,11 @@
 
 namespace Core\Cache;
 
-use Core\Render\Render;
+use Core\Render\PhantomRender;
 
 class PhantomCache
 {
-    public function read_cache_file(string $path, Render $render_handler,)
+    public function read_cache_file(string $path, PhantomRender $render_handler,)
     {
         // Ruta del archivo JSON
         $jsonFile = JSON_CACHE_FILE;
@@ -48,13 +48,5 @@ class PhantomCache
         // Guardar el JSON actualizado
         $jsonView = json_encode($defaultData, JSON_PRETTY_PRINT);
         file_put_contents($jsonFile, $jsonView);
-
-        // crear el archivo JSON
-        // $cache = __DIR__ . '/Cache/views/';
-        // $cacheFile = $cache . $path . '.blade.php';
-
-        // if (!file_exists($cacheFile)) {
-        //     file_put_contents($cacheFile, $view);
-        // }
     }
 }

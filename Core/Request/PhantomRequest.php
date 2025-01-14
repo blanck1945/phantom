@@ -2,6 +2,8 @@
 
 namespace Core\Request;
 
+use Core\Dto\Dto;
+
 class PhantomRequest
 {
     private array $queryParams = [];
@@ -9,14 +11,15 @@ class PhantomRequest
 
     private string $method;
     private string $path;
-    private $bodyDto = null;
+    private Dto $bodyDto;
+    private array $request;
 
     public function __construct(private array $params = [])
     {
-        $this->queryParams = $_GET;
         $this->body = $_POST;
-        $this->method = $_SERVER['REQUEST_METHOD'];
+        $this->method = $_POST['_method'] ?? $_SERVER['REQUEST_METHOD'];
         $this->path = $_SERVER['REQUEST_URI'];
+        $this->request = $_REQUEST;
     }
 
     public function getParams()
@@ -29,9 +32,17 @@ class PhantomRequest
         $this->queryParams[$key] = $value;
     }
 
-    public function getParam($key)
+    public function getParam($key, $convertIfPosible = true)
     {
-        return $this->queryParams[$key];
+        $param = $this->queryParams[$key];
+
+        if ($convertIfPosible) {
+            if (is_numeric($param)) {
+                return (int) $param;
+            }
+        }
+
+        return $param;
     }
 
     public function get_server()
@@ -59,6 +70,11 @@ class PhantomRequest
         return $this->bodyDto;
     }
 
+    public function getDtoProps()
+    {
+        return get_object_vars($this->bodyDto);
+    }
+
     public function setBody($body)
     {
         $this->body = $body;
@@ -69,29 +85,22 @@ class PhantomRequest
         $this->body[$key] = $value;
     }
 
-    public function getBody()
+    public function getBody(): array
     {
         return $this->body;
-        // $body = [];
-        // $method = $this->get_method();
-
-        // if ($method === 'GET') {
-        //     foreach ($_GET as $key => $value) {
-        //         $body[$key] = filter_input(INPUT_GET, $key, FILTER_SANITIZE_SPECIAL_CHARS);
-        //     }
-        // }
-
-        // if ($method === 'POST') {
-        //     foreach ($_POST as $key => $value) {
-        //         $body[$key] = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
-        //     }
-        // }
-
-        // return $body;
     }
 
     public function __get($name)
     {
         return $this->params[$name];
+    }
+
+    public function getUser()
+    {
+        if (isset($_REQUEST['user'])) {
+            return $_REQUEST['user'];
+        }
+
+        return null;
     }
 }

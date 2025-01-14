@@ -12,7 +12,7 @@ class ServiceCLI
     {
         echo 'CREATING SERVICE ' . $service_name;
 
-        $directory = __DIR__ . '\\..\\..\\app\\Http\\Controller\\'  . $service_name;
+        $directory = CONTROLLERS_PATH  . $service_name;
 
         $this->file_handler->if_exists_and_create($directory);
 
@@ -20,7 +20,7 @@ class ServiceCLI
 
         $service_content = '<?php
 
-namespace App\Http\Controller\\' . $service_name . ';
+namespace App\Http\Controllers\\' . $service_name . ';
 
 class ' . $service_name . 'Service
 {

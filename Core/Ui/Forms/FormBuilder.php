@@ -10,7 +10,13 @@ class FormBuilder
     {
         $form_to_render = [];
         foreach ($form_fields as $field) {
-            $__field = new $field['type']($field['name'], $field['label'], $field['value'], $field['placeholder'] ?? '');
+            $__field = new $field['type'](
+                $field['name'],
+                $field['value'],
+                $field['label'] ?? '',
+                $field['placeholder'] ?? '',
+                $field['error'] ?? ''
+            );
             $form_to_render[] = $__field->render();
         }
 

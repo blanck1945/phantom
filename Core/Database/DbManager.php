@@ -12,11 +12,12 @@ class DbManager
 {
     private $pdo;
 
+    private string $query = "";
+
     private string $sqlToExecute = "";
 
     public function __construct()
     {
-        var_dump("llamando al constructor");
         $this->pdo = new PDO(
             Env::get('DB_CONNECTION_STRING'),
             Env::get('DB_USER'),
@@ -24,14 +25,21 @@ class DbManager
         );
     }
 
-    public function createTable($table, $fields)
+    public function createTable($table, $exec)
     {
+        if (!empty($this->query)) {
+            $this->query = "";
+        }
+
         try {
-            $sql = $this->build_sql($table, $fields);
+            $exec();
+
+            $sql = $this->createStatment($table);
 
             $this->pdo->exec($sql);
         } catch (\PDOException $e) {
-            echo $e->getMessage();
+            echo "Error: " . $e->getMessage() . "\n";
+            echo "SQL: " .  $sql . "\n";
         }
     }
 
@@ -39,8 +47,6 @@ class DbManager
     {
         try {
             $this->sqlToExecute = $this->sqlToExecute . "DROP TABLE IF EXISTS $table;";
-
-            var_dump($this->sqlToExecute);
 
             $this->pdo->exec($this->sqlToExecute);
         } catch (\PDOException $e) {
@@ -69,35 +75,62 @@ class DbManager
         }
     }
 
-    public function build_sql($table, $fields)
+    /*
+    |--------------------------------------------------------------------------
+    |   Database actions
+    |--------------------------------------------------------------------------
+    |
+    |
+    */
+
+    public function createStatment($table)
     {
-        $sql = "CREATE TABLE IF NOT EXISTS $table (";
-        foreach ($fields as $field) {
-            $sql .= $field . ",";
-        }
-        $sql = rtrim($sql, ",");
-        $sql .= ")";
+        $sql = "CREATE TABLE IF NOT EXISTS $table (" . $this->query . ")";
         return $sql;
     }
 
-    public function primaryKey($name)
+    /*
+    |--------------------------------------------------------------------------
+    |   Columns Types
+    |--------------------------------------------------------------------------
+    |
+    |   Define the types of the columns
+    |
+    */
+
+    public function id(string $primary = 'id'): static
     {
-        return "$name SERIAL PRIMARY KEY";
+        if (empty($this->query))
+            $this->query .= "$primary SERIAL PRIMARY KEY";
+        else
+            $this->query .= ", $primary SERIAL PRIMARY KEY";
+
+        return $this;
     }
 
-    public function string(string $name, string $length = '255'): string
+    public function string(string $name, string $length = '255')
     {
-        return "$name VARCHAR($length)";
+
+        if (empty($this->query))
+            $this->query .= " $name VARCHAR($length)";
+        else
+            $this->query .= ',' . " $name VARCHAR($length)";
+
+        return $this;
     }
 
     public function integer($name)
     {
-        return "$name INT";
+        $this->query .= ", $name INT";
+
+        return $this;
     }
 
-    public function decimal($name, $length, $precision)
+    public function decimal($name, $length = 10, $precision = 2)
     {
-        return "$name DECIMAL($length, $precision)";
+        $this->query .= ", $name DECIMAL($length, $precision)";
+
+        return $this;
     }
 
     public function text($name)
@@ -112,7 +145,9 @@ class DbManager
 
     public function date($name)
     {
-        return "$name DATE";
+        $this->query .= ", $name DATE";
+
+        return $this;
     }
 
     public function time($name)
@@ -133,16 +168,58 @@ class DbManager
 
         $enum = "CREATE TYPE $name AS ENUM (" . "'" . implode("', '", $values) . "'" . ")";
 
-        var_dump($enum);
-
         $this->pdo->exec($enum);
 
         return "$name $name NOT NULL";
     }
 
-    public function hasOne(string $table, string $field = 'id')
+    public function timestamps()
     {
-        return "FOREIGN KEY ($field) REFERENCES $table (id) ON DELETE CASCADE";
+        $this->query .= ", created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+        deleted_at TIMESTAMP";
+
+        return $this;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    |   Modifiers
+    |--------------------------------------------------------------------------
+    |
+    |   Define the modifiers for the fields
+    |
+    */
+
+    public function notNull(): static
+    {
+        $this->query .= " NOT NULL";
+
+        return $this;
+    }
+
+    public function unique(): static
+    {
+        $this->query .= " UNIQUE";
+
+        return $this;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    |   Relationships
+    |--------------------------------------------------------------------------
+    |
+    |   Define the relationships between tables
+    |
+    */
+
+    public function hasOne(string $table, string $field = 'id'): static
+    {
+        $this->query .= ", FOREIGN KEY ($field) REFERENCES $table (id) ON DELETE CASCADE";
+
+        return $this;
     }
 
     public function hasMany(string $table, string $field = 'id')

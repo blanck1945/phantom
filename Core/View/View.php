@@ -23,4 +23,16 @@ class View
             return false;
         }
     }
+
+    public function get404View()
+    {
+        $view_path = VIEW_PATH . '404.blade.php';
+
+        if (file_exists($view_path)) {
+            return $view_path;
+        } else {
+            PhantomResponse::send404("View not found");
+            return false;
+        }
+    }
 }

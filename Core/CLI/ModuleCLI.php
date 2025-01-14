@@ -20,7 +20,7 @@ class ModuleCLI
 
         $module_content = '<?php
 
-namespace App\Http\Controller\\' . $module_name . ';
+namespace App\Http\Controllers\\' . $module_name . ';
 
 use Core\Interfaces\ICoreModule;
 

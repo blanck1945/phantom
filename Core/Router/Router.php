@@ -6,6 +6,12 @@ use config\BindingsConfig;
 use config\PathConfig;
 use Core\Database\Database;
 use Core\Exception\ViewException;
+use Core\Helpers\Decorators\Controller;
+use Core\Helpers\Decorators\Get;
+use Core\Helpers\Decorators\Module;
+use Core\Helpers\Decorators\Post;
+use Core\Helpers\Decorators\UseActions\UseGuard;
+use Core\Helpers\Decorators\UseActions\UseMiddlewares;
 use Core\Helpers\PhantomHandler;
 use Core\Helpers\PhantomValidator;
 use Core\Interfaces\ICoreController;
@@ -16,15 +22,19 @@ use Core\Services\FormService\FormService;
 use Core\Services\ValidatorService;
 use Core\Ui\Forms\FormBuilder;
 use DI\Container;
+use ReflectionClass;
+use ReflectionMethod;
 
 class Router
 {
     public const  INIT_POINT = '/';
     public $route_to_execute = null;
     private $handler = null;
-
+    private $controller = null;
     private ViewException $viewException;
     public $module_to_execute = '';
+
+    private ReflectionMethod $route_method;
 
     private PhantomHandler $phantomHandler;
 
@@ -142,6 +152,16 @@ class Router
     public function get_phantom_handler(): PhantomHandler
     {
         return $this->phantomHandler;
+    }
+
+    public function get_controller(Container $container)
+    {
+        return $container->get($this->controller);
+    }
+
+    public function get_route_method()
+    {
+        return $this->route_method;
     }
 
     /*********************************************************************
@@ -307,33 +327,159 @@ class Router
         $module = null;
 
         foreach ($phantomRoutes as $handler) {
-            $newModule = new $handler();
-            $moduleRoutes = $newModule::routes();
 
-            if (array_key_exists($_SERVER['REQUEST_URI'], $moduleRoutes)) {
-                $route_to_call = $moduleRoutes[$_SERVER['REQUEST_URI']];
-                $module = $handler;
-                $this->path_to_excute = $_SERVER['REQUEST_URI'];
-            } else {
-                foreach ($moduleRoutes as $path => $routes) {
+            $reflectionModule = new ReflectionClass(objectOrClass: $handler);
+            $moduleDecorator = $reflectionModule->getAttributes(Module::class)[0];
+            $controller = $moduleDecorator->newInstance()->controller;
 
-                    // Verificamos si la ruta tiene un parámetro dinámico con el formato /:{propiedad}
-                    if (strpos($path, ':') !== false) {
+            $controllerReflection = new ReflectionClass(objectOrClass: $controller);
+            $controllerDecorator = $controllerReflection->getAttributes(Controller::class)[0];
+            $basePath = $controllerDecorator->newInstance()->basePath;
 
-                        // Convertimos el patrón en una expresión regular
-                        $pattern = preg_replace('/:\w+/', '([^/]+)', $path);
-                        $pattern = '#^' . $pattern . '$#';
+            // Obtener el path actual de la URL
+            $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-                        $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH); // Asegurarse de trabajar solo con el path
+            // Manejar ruta base (index)
+            if ($current_path === $basePath || $current_path === $basePath . '/') {
+                foreach ($controllerReflection->getMethods() as $method) {
+                    $attributes = $method->getAttributes($this->request->get_method() === 'GET' ? Get::class : Post::class);
 
-                        if (preg_match($pattern, $current_path, $matches)) {
-                            $route_to_call = $moduleRoutes[$path];
+                    foreach ($attributes as $attribute) {
+                        $instance = $attribute->newInstance();
+                        if ($instance->path === '') {
+                            $route_to_call = [$_SERVER['REQUEST_METHOD'] => ['controller' => $method->name]];
+                            $this->route_method = $method;
+                            $this->controller = $controller;
                             $module = $handler;
-                            $this->path_to_excute =  $path;
-                            $this->set_queries($path, $matches);
+                            $this->path_to_excute = $current_path;
+                            break 2;
                         }
                     }
-                };
+                }
+            }
+
+            // Manejar rutas con y sin parámetros dinámicos
+            if ($basePath !== '/' && str_starts_with($current_path, $basePath)) {
+                foreach ($controllerReflection->getMethods() as $method) {
+                    $attributes = $method->getAttributes($this->request->get_method() === 'GET' ? Get::class : Post::class);
+
+                    foreach ($attributes as $attribute) {
+                        $instance = $attribute->newInstance();
+
+                        if (!property_exists($instance, 'path')) {
+                            continue;
+                        }
+
+                        // Construir ruta completa
+                        $route = rtrim($basePath . '/' . $instance->path, '/');
+
+                        // Extraer nombres de parámetros dinámicos
+                        preg_match_all('/:(\w+)/', $route, $paramNames);
+                        $paramNames = $paramNames[1]; // Obtener solo los nombres sin los dos puntos
+
+                        // Guardar los nombres de los parámetros para usarlos después
+                        $this->route_quries = array_combine(
+                            $paramNames, // Las claves serán los nombres de los parámetros
+                            array_fill(0, count($paramNames), null) // Inicializar valores como null
+                        );
+                        // Convertir parámetros dinámicos a regex
+                        $pattern = preg_replace('/:\w+/', '([^/]+)', $route);
+
+                        $pattern = '#^' . $pattern . '$#';
+
+                        // Verificar coincidencia
+                        if (preg_match($pattern, $current_path, $matches)) {
+
+                            array_shift($matches); // Remover coincidencia completa
+                            $route_to_call = [$_SERVER['REQUEST_METHOD'] => [
+                                'controller' => $method->name,
+                                'params' => $matches
+                            ]];
+                            $this->route_method = $method;
+                            $this->controller = $controller;
+                            foreach ($this->route_quries as $paramName => $value) {
+                                $this->request->setParam($paramName, $matches[0]);
+                            }
+                            $module = $handler;
+                            $this->path_to_excute = $current_path;
+                            break 2;
+                        }
+                    }
+                }
+            }
+
+            // Verificar si es el módulo raíz (/)
+            if ($basePath === '/') {
+                foreach ($controllerReflection->getMethods() as $method) {
+                    $attributes = $method->getAttributes($this->request->get_method() === 'GET' ? Get::class : Post::class);
+
+                    foreach ($attributes as $attribute) {
+                        $instance = $attribute->newInstance();
+
+                        if (!property_exists($instance, 'path')) {
+                            continue;
+                        }
+
+                        // Construir ruta completa para el módulo raíz
+                        $route = '/' . $instance->path;
+
+                        // Extraer nombres de parámetros dinámicos
+                        preg_match_all('/:(\w+)/', $route, $paramNames);
+                        $paramNames = $paramNames[1];
+
+                        // Guardar los nombres de los parámetros
+                        $this->route_quries = array_combine(
+                            $paramNames,
+                            array_fill(0, count($paramNames), null)
+                        );
+
+                        // Convertir parámetros dinámicos a regex
+                        $pattern = preg_replace('/:\w+/', '([^/]+)', $route);
+                        $pattern = '#^' . $pattern . '$#';
+
+                        // Verificar coincidencia exacta o con parámetros
+                        if ($route === $current_path || preg_match($pattern, $current_path, $matches)) {
+                            $route_to_call = [$_SERVER['REQUEST_METHOD'] => [
+                                'controller' => $method->name
+                            ]];
+
+                            if (!empty($matches)) {
+                                array_shift($matches);
+                                $route_to_call[$_SERVER['REQUEST_METHOD']]['params'] = $matches;
+
+                                foreach ($this->route_quries as $paramName => $value) {
+                                    $this->request->setParam($paramName, $matches[0]);
+                                }
+                            }
+
+                            $this->route_method = $method;
+                            $this->controller = $controller;
+                            $module = $handler;
+                            $this->path_to_excute = $current_path;
+                            break 2;
+                        }
+                    }
+                }
+            }
+
+            $middlewaresAttributes = $method->getAttributes(UseMiddlewares::class);
+            $guardAttributes = $method->getAttributes(UseGuard::class);
+
+            $guards = [];
+            $middlewares = [];
+
+            if (!empty($middlewaresAttributes)) {
+                foreach ($middlewaresAttributes as $middlewaresAttribute) {
+                    $middleware = $middlewaresAttribute->newInstance();
+                    $middlewares[] = $middleware->getMiddlewares();
+                }
+            }
+
+            if (!empty($guardAttributes)) {
+                foreach ($guardAttributes as $guardAttribute) {
+                    $guard = $guardAttribute->newInstance();
+                    $guards[] = $guard->getGuards();
+                }
             }
         };
 
@@ -347,9 +493,9 @@ class Router
             $module,
             [$_SERVER['REQUEST_URI'] => [$method => $route_to_call[$method]]],
             $executable['controller'] ?? $executable,
-            $executable['guards'] ?? [],
+            $guards ?? [],
             $executable['pipes'] ?? [],
-            $executable['middlewares'] ?? [],
+            $middlewares ?? [],
             $executable['csrf'] ?? false,
             $executable['validator'] ?? null,
             $executable['dto'] ?? null
@@ -414,7 +560,7 @@ class Router
             exit;
         }
 
-        $controller_to_execute = $module::CONTROLLER;
+        $controller_to_execute = $this->controller;
 
         return $container->get($controller_to_execute);
     }

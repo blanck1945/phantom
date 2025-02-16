@@ -106,12 +106,15 @@ class PhantomRender
             }
         } else {
             $global_metadata = $this->metadata_handler->get_global_metadata();
-            $executable['metadata'] = [
-                ...$global_metadata,
-                'css' => [],
-                'js' => [],
-                'favicon' => ''
-            ];
+            if (is_array($executable)) {
+
+                $executable['metadata'] = [
+                    ...$global_metadata,
+                    'css' => [],
+                    'js' => [],
+                    'favicon' => ''
+                ];
+            }
         }
 
         if (Env::get('DEV_MODE') === 'false' && array_key_exists('view', $executable)) {
@@ -120,6 +123,6 @@ class PhantomRender
 
         // $view = $this->view_handler->get_view($executable['view'] ?? null);
 
-        $this->render($executable, $route_config, $executable['view']);
+        $this->render($executable, $route_config, $executable['view'] ?? null);
     }
 }

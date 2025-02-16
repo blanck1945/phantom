@@ -2,12 +2,19 @@
 
 namespace Core;
 
+use App\Http\Controllers\User\UserController;
 use config\AuthConfig;
 use config\BindingsConfig;
 use config\GlobalVariables;
+use config\GuardsConfig;
+use config\MiddlewaresConfig;
 use Core\Cache\PhantomCache;
 use Core\Cors\Cors;
 use Core\Database\Database;
+use Core\Helpers\Decorators\Controller;
+use Core\Helpers\Decorators\Get;
+use Core\Helpers\Decorators\Param;
+use Core\Helpers\Decorators\Post;
 use Core\Metadata\Metadata;
 use Core\Render\PhantomRender;
 use Core\Request\PhantomRequest;
@@ -17,6 +24,7 @@ use Core\Server\Server;
 use Core\Services\AuthService\AuthService;
 use Core\View\View;
 use DI\Container;
+use ReflectionClass;
 
 class Phantom
 {
@@ -66,6 +74,57 @@ class Phantom
         );
     }
 
+    function handleRequest()
+    {
+        $controller = $this->router_handler->get_controller_instance($this->container);
+        $phantomHandler = $this->router_handler->get_phantom_handler();
+
+        foreach ($phantomHandler->get_middlewares() as $middlewares) {
+            foreach ($middlewares as $middleware) {
+                $middlewareInstance = MiddlewaresConfig::getMiddleware($middleware);
+                $middlewareClass = $this->container->get($middlewareInstance);
+                $middlewareClass->handler();
+            }
+        }
+
+        foreach ($phantomHandler->get_guards() as $guards) {
+            foreach ($guards as $guard) {
+                $guardInstance = GuardsConfig::getGuard($guard);
+                $guardClass = $this->container->get($guardInstance);
+                $guardClass->handler();
+            }
+        }
+
+        $method = $this->router_handler->get_route_method();
+
+        $params = $method->getParameters();
+
+        foreach ($params as $param) {
+            $paramAttributes = $param->getAttributes(Param::class);
+
+            if (!empty($paramAttributes)) {
+                $paramInstance = $paramAttributes[0]->newInstance();
+                $paramName = $paramInstance->name;
+
+                $param = $this->request->getParam($paramName);
+
+                $params = $this->request->getParams();
+
+                if (is_numeric($param)) {
+                    $param = (string)$param;
+                }
+
+                // Obtener el valor desde la URL o request (ajústalo según tu sistema)
+                $args[] = $param ?? null;
+            } else {
+                $args[] = null; // Si no tiene #[Param], puedes pasar null o el request entero
+            }
+        }
+
+        // Instanciar el controlador y ejecutar el método con los valores extraídos
+        return $method->invokeArgs($controller, $params);
+    }
+
 
     public function boostrap()
     {
@@ -75,27 +134,29 @@ class Phantom
 
         //$this->router_handler->check_if_we_should_execute_route($start);
 
-        $this->show_404_if_empty();
+        // $this->show_404_if_empty();
 
         $this->router_handler->execute_global_middlewares($this->container);
 
-        $this->router_handler->execute_route_middleware();
+        // $this->router_handler->execute_route_middleware();
 
-        $this->router_handler->execute_guards($this->container);
+        // $this->router_handler->execute_guards($this->container);
 
-        $this->router_handler->execute_pipes();
+        // $this->router_handler->execute_pipes();
 
-        $this->router_handler->execute_validator();
+        // $this->router_handler->execute_validator();
 
-        $this->router_handler->execute_dto();
+        // $this->router_handler->execute_dto();
 
-        $instance = $this->router_handler->get_controller_instance($this->container);
+        // $instance = $this->router_handler->get_controller_instance($this->container);
 
-        $queries = $this->router_handler->get_queries();
+        // $queries = $this->router_handler->get_queries();
 
-        $executable = $this->server_handler->execute_handler($instance, $queries);
+        // $executable = $this->server_handler->execute_handler($instance, $queries);
 
-        if (array_key_exists('redirect', $executable)) {
+        $executable = $this->handleRequest($this->request->get_path());
+
+        if (is_array($executable) && array_key_exists('redirect', $executable)) {
             PhantomResponse::redirect($executable['redirect']);
             exit;
         }
@@ -112,6 +173,7 @@ class Phantom
 
     public function show_404_if_empty()
     {
+        var_dump('show_404_if_empty');
         if (empty($this->router_handler->get_phantom_handler()->get_module())) {
             $route_config = $this->router_handler->get_controller_config();
 

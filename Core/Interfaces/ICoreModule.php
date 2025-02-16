@@ -7,9 +7,5 @@ namespace Core\Interfaces;
  * 
  * @package Core\Interfaces
  *  
- * @method static routes()
  */
-interface ICoreModule
-{
-    static public function routes();
-}
+interface ICoreModule {}
